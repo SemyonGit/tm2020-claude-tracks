@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "name": "Silvercut",
+    "author": "SemyonGit",
+    "category": "speedtech",
+    "difficulty": 3,
+    "creativity": 3,
+    "target_at": "00:55.000",
+    "generated_by": "Claude (Anthropic)",
+    "generated_at": "2026-05-04T10:00:00Z",
+    "description": "Fliessende Speedtech-Strecke mit 4 Sektionen: Anlauf, Chicane-Block, Hügel-Kompression und Wall-Touch-Finale. Mittlere Schwierigkeit – die Linie muss stimmen, Fehler kosten Zeit aber keine Nerven."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day",
+    "decoration": "Stadium"
+  },
+  "blocks": [
+    {"id": "StadiumRoadMainStart",        "x": 10, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 11, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 12, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 13, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainBankRight",    "x": 14, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainBankRight",    "x": 15, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainCurve2Right",  "x": 16, "y": 1, "z": 20, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 16, "y": 1, "z": 21, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainChicaneRight", "x": 16, "y": 1, "z": 22, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainChicaneLeft",  "x": 16, "y": 1, "z": 23, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainCheckpointIn", "x": 16, "y": 1, "z": 24, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 16, "y": 1, "z": 25, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainChicaneLeft",  "x": 16, "y": 1, "z": 26, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainChicaneRight", "x": 16, "y": 1, "z": 27, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 16, "y": 1, "z": 28, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainCurve2Right",  "x": 16, "y": 1, "z": 29, "rotation": 2, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 15, "y": 1, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainSlope2Up",     "x": 14, "y": 1, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainSlope2Up",     "x": 13, "y": 2, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 12, "y": 3, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainSlope2Down",   "x": 11, "y": 3, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainSlope2Down",   "x": 10, "y": 2, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainCheckpointIn", "x": 9,  "y": 1, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainCurve2Right",  "x": 8,  "y": 1, "z": 29, "rotation": 3, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 8,  "y": 1, "z": 28, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainWallLeft",     "x": 8,  "y": 1, "z": 27, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainWallLeft",     "x": 8,  "y": 1, "z": 26, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainWallLeft",     "x": 8,  "y": 1, "z": 25, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 8,  "y": 1, "z": 24, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainChicaneLeft",  "x": 8,  "y": 1, "z": 23, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainChicaneRight", "x": 8,  "y": 1, "z": 22, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainCheckpointIn", "x": 8,  "y": 1, "z": 21, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 8,  "y": 1, "z": 20, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 8,  "y": 1, "z": 19, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainCurve2Right",  "x": 8,  "y": 1, "z": 18, "rotation": 0, "flags": 0},
+    {"id": "StadiumRoadMainStraight",     "x": 9,  "y": 1, "z": 18, "rotation": 1, "flags": 0},
+    {"id": "StadiumRoadMainFinish",       "x": 10, "y": 1, "z": 18, "rotation": 1, "flags": 0}
+  ],
+  "checkpoints": [10, 22, 31],
+  "sections": [
+    {
+      "name": "Launch & Bank",
+      "description": "Gerader Anlauf mit zwei gebanksten Blöcken, dann fliessende Rechtskurve. Vollgas möglich – aber die Bank will Respekt.",
+      "block_range": [0, 6],
+      "trap": "Die zweite Bank zieht das Auto weiter nach rechts als erwartet – wer zu weit aussen bleibt, verliert die Linie in die Kurve."
+    },
+    {
+      "name": "Doppel-Chicane",
+      "description": "Zwei Schikanen in schneller Folge – Rechts-Links, dann Links-Rechts. Checkpoint 1 liegt zwischen den beiden Paaren.",
+      "block_range": [7, 15],
+      "trap": "Das zweite Paar ist spiegelverkehrt zum ersten. Wer auf Autopilot fährt, macht den falschen Einschlag."
+    },
+    {
+      "name": "Hügel-Kompression",
+      "description": "Steiler 2-Block-Anstieg, kurze Kuppe, dann schroffer Abfall. Checkpoint 2 liegt am Fuss des Gefälles.",
+      "block_range": [16, 23],
+      "trap": "Wer auf der Kuppe noch bremst, verliert durch die Kompression unten Kontrolle. Vollgas durch den Abfall."
+    },
+    {
+      "name": "Wall-Touch & Sprint",
+      "description": "Drei Wall-Blöcke links – leichte Berührung der Wand gibt Linie. Danach Doppel-Chicane, Checkpoint 3, Sprint zum Ziel.",
+      "block_range": [24, 36],
+      "trap": "Die Wand ist Freund, kein Feind – aber zu viel Druck kostet Geschwindigkeit. Nur kurz antippen."
+    }
+  ]
+}
