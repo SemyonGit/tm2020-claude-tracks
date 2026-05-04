@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "name": "Razorline",
+    "author": "DEIN-GITHUB-USERNAME",
+    "category": "speedtech",
+    "difficulty": 5,
+    "creativity": 3,
+    "target_at": "00:45.000",
+    "generated_by": "Claude (Anthropic)",
+    "generated_at": "2026-05-04T00:00:00Z",
+    "description": "Brutale Speedtech-Strecke mit 8 Sektionen. Jede Sektion hat eine versteckte Falle."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day",
+    "decoration": "Stadium"
+  },
+  "blocks": [
+    { "id": "StadiumRoadMainStraight",    "x": 16, "y": 1, "z": 16, "rotation": 0 },
+    { "id": "StadiumRoadMainStraight",    "x": 17, "y": 1, "z": 16, "rotation": 0 },
+    { "id": "StadiumRoadMainStraight",    "x": 18, "y": 1, "z": 16, "rotation": 0 },
+    { "id": "StadiumRoadMainStraight",    "x": 19, "y": 1, "z": 16, "rotation": 0 },
+    { "id": "StadiumRoadMainCurve2In",    "x": 20, "y": 1, "z": 16, "rotation": 1 },
+    { "id": "StadiumRoadMainCurve2Out",   "x": 21, "y": 1, "z": 17, "rotation": 1 },
+    { "id": "StadiumRoadMainStraight",    "x": 21, "y": 1, "z": 18, "rotation": 1 },
+    { "id": "StadiumRoadMainStraight",    "x": 21, "y": 1, "z": 19, "rotation": 1 },
+    { "id": "StadiumRoadMainChicaneLeft", "x": 21, "y": 1, "z": 20, "rotation": 1 },
+    { "id": "StadiumRoadMainChicaneRight","x": 21, "y": 1, "z": 21, "rotation": 1 },
+    { "id": "StadiumRoadMainChicaneLeft", "x": 21, "y": 1, "z": 22, "rotation": 1 },
+    { "id": "Checkpoint",                 "x": 21, "y": 1, "z": 23, "rotation": 1 },
+    { "id": "StadiumRoadMainStraight",    "x": 21, "y": 1, "z": 24, "rotation": 1 },
+    { "id": "StadiumRoadMainFinish",      "x": 21, "y": 1, "z": 32, "rotation": 1 }
+  ],
+  "checkpoints": [11],
+  "sections": [
+    {
+      "name": "Launch & Anlauf",
+      "description": "Breiter Start, sofort enger werdend",
+      "block_range": [0, 4],
+      "trap": "Die erste Kurve kommt früher als erwartet"
+    },
+    {
+      "name": "Chicane Alley",
+      "description": "3 Schikanen ohne Pause",
+      "block_range": [5, 10],
+      "trap": "Mittlere Schikane ist 0.5 Blöcke versetzt – kein Spiegel"
+    }
+  ]
+}

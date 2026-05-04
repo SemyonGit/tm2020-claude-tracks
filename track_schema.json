@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TM2020 Claude Track",
+  "description": "Schema für alle von Claude generierten TM2020-Tracks",
+  "type": "object",
+  "required": ["meta", "settings", "blocks", "checkpoints"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["name", "author", "category", "difficulty", "creativity", "generated_by", "generated_at"],
+      "properties": {
+        "name":         { "type": "string", "description": "Track-Name" },
+        "author":       { "type": "string", "description": "GitHub-Username des Besitzers" },
+        "category":     { "type": "string", "enum": ["speedtech","fullspeed","tech","dirt","rally","stunts","ice","fun","lol","beginner"] },
+        "difficulty":   { "type": "integer", "minimum": 1, "maximum": 5 },
+        "creativity":   { "type": "integer", "minimum": 1, "maximum": 5, "description": "1=klassisch, 5=experimentell" },
+        "target_at":    { "type": "string", "description": "Ziel-Author-Time z.B. '00:45.000'" },
+        "generated_by": { "type": "string", "const": "Claude (Anthropic)" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "description":  { "type": "string" }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "environment": { "type": "string", "enum": ["Stadium","Snow","Rally","Desert","Island","Bay","Coast"] },
+        "mood":        { "type": "string", "enum": ["Sunrise","Day","Sunset","Night","Storm"] },
+        "decoration":  { "type": "string" }
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "x", "y", "z", "rotation"],
+        "properties": {
+          "id":       { "type": "string", "description": "Block-ID aus catalog/blocks.json" },
+          "x":        { "type": "integer" },
+          "y":        { "type": "integer" },
+          "z":        { "type": "integer" },
+          "rotation": { "type": "integer", "enum": [0, 1, 2, 3], "description": "0=Nord 1=Ost 2=Süd 3=West" },
+          "flags":    { "type": "integer", "default": 0 }
+        }
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "description": "Block-Indizes die Checkpoints sind",
+      "items": { "type": "integer" }
+    },
+    "sections": {
+      "type": "array",
+      "description": "Benannte Sektionen für Dokumentation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name":        { "type": "string" },
+          "description": { "type": "string" },
+          "block_range": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+          "trap":        { "type": "string", "description": "Versteckte Schwierigkeit in dieser Sektion" }
+        }
+      }
+    }
+  }
+}
