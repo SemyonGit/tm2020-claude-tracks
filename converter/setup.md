@@ -2,54 +2,73 @@
 
 ## 1. Dependencies
 
-```bash
-pip install -r converter/requirements.txt
+```powershell
+py -3.12 -m pip install -r converter/requirements.txt
 ```
 
-`gbx-py` liefert nur das LZO-Binding (`gbx.lzo`) — die eigentliche
-Bibliothek (Parser, Strukturen) ist als `converter/gbxpy/` im Repo gevendort
-(Original: https://github.com/schadocalex/gbx-py).
+`gbx-py` (pip) only installs the LZO binding (`gbx.lzo`). The actual parser and
+structures are vendored as `converter/gbxpy/` (source: https://github.com/schadocalex/gbx-py).
+Do not replace or upgrade `converter/gbxpy/` via pip.
 
-## 2. TM2020-Map-Template
+## 2. TM2020 Map Template
 
-Das Skript baut die Map nicht aus dem Nichts, sondern öffnet ein leeres
-TM2020-Template, ersetzt die Block-Liste und schreibt es zurück.
+The converter does not build from scratch — it opens an empty TM2020 template,
+replaces the block list, and writes it back.
 
-**Einmalig nötig:** eine leere TM2020-Map als Template anlegen.
-
-1. TM2020 starten → **Track Editor** → **New Map**.
-2. Stadium-Umgebung wählen, **nichts** platzieren, sofort speichern als `template`.
-3. Datei aus dem Maps-Ordner kopieren:
-   - Windows: `Documents/Trackmania/Maps/My Maps/template.Map.Gbx`
-4. Ablegen unter:
+**One-time setup:**
+1. Launch TM2020 → **Track Editor** → **New Map**
+2. Choose Stadium environment, place **nothing**, save immediately as `template`
+3. Copy the file from:
+   ```
+   C:/Users/semyo/Documents/Trackmania/Maps/My Maps/template.Map.Gbx
+   ```
+4. Place it at:
    ```
    converter/template.Map.Gbx
    ```
 
-Solange diese Datei fehlt, schlägt der Build mit einer klaren Fehlermeldung
-fehl. `--dry-run` funktioniert auch ohne Template.
+Without this file the build fails with a clear error. `--dry-run` works without it.
 
-## 3. Verwendung
+## 3. Usage
 
-```bash
-# Einzelne Map
-python converter/build.py tracks/speedtech/silvercut/silvercut.json
-
-# Nur prüfen, kein Output
-python converter/build.py tracks/speedtech/silvercut/silvercut.json --dry-run
-
-# Nicht automatisch in TM2020-Ordner kopieren
-python converter/build.py track.json --no-deploy
-
-# Alle Tracks unter tracks/ rekursiv bauen
-python converter/build.py tracks --batch
+Always set encoding first in PowerShell:
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
 ```
 
-Output: `<name>.Map.Gbx` neben der Eingabe-JSON. Wenn ein TM2020-Maps-Ordner
-gefunden wird (`Documents/Trackmania/Maps/My Maps`), wird dort automatisch
-deployed (außer mit `--no-deploy`).
+```powershell
+# Single track
+py -3.12 converter/build.py tracks/speedtech/silvercut/silvercut.json
 
-## 4. Block-Mapping erweitern
+# Dry-run (validate only, no output written)
+py -3.12 converter/build.py tracks/speedtech/silvercut/silvercut.json --dry-run
 
-In `converter/build.py` → `BLOCK_MAP`. Schlüssel = JSON-ID, Wert = echter
-TM2020 Stadium-Blockname. Unbekannte IDs werden 1:1 durchgereicht.
+# Skip auto-deploy to TM2020 folder
+py -3.12 converter/build.py tracks/speedtech/silvercut/silvercut.json --no-deploy
+
+# Build all tracks under tracks/ recursively
+py -3.12 converter/build.py tracks --batch
+```
+
+Output: `{name}.Map.Gbx` written next to the input JSON.
+If `C:/Users/semyo/Documents/Trackmania/Maps/My Maps/` exists, the file is auto-deployed there (unless `--no-deploy`).
+
+## 4. Parsing Existing Maps (for reference/debugging)
+
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+py -3.12 -c "
+import sys
+sys.path.insert(0, 'converter')
+from gbxpy.parser import parse_file
+data = parse_file('C:/Users/semyo/Documents/Trackmania/Maps/My Maps/test_kurven.Map.Gbx')
+chunk = data.body[0x0304301F]
+for i, b in enumerate(chunk.Blocks):
+    print(f'{i:2d}. {b.blockName:35s} x={b.coord.x:3d} y={b.coord.y:3d} z={b.coord.z:3d} dir={b.dir}')
+"
+```
+
+## 5. Extending the Block Map
+
+In `converter/build.py` → `BLOCK_MAP`. Key = JSON block ID, value = real TM2020 block name.
+Unknown IDs are passed through as-is.

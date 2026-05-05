@@ -1,44 +1,68 @@
 # TM2020 Claude Tracks – Claude Code Context
 
-## Projekt
-Automatisierte TM2020-Track-Generierung via Claude AI (claude.ai Projekt).
-Tracks werden von Claude (Chat) als JSON entworfen, Claude Code konvertiert und deployed.
+## Project
+Growing library of AI-generated TM2020 tracks across 10 categories.
+Claude (Web) designs tracks as JSON. Claude Code converts, commits, and deploys.
+
+## Roles
+- **Claude Web (claude.ai):** creative design, JSON generation, SVG preview — never executed here
+- **Claude Code (this session):** convert, fix bugs, commit, deploy — never design tracks
+- **User:** saves JSON from Claude Web to the correct folder, reviews results in TM2020
 
 ## Stack
-- Python 3.x (Konverter: converter/build.py)
-- GBX-Binärformat (Trackmania Map Format)
-- GitHub (Versionskontrolle + Archiv)
+- Python 3.12 — always use `py -3.12`
+- Always prefix Python commands with: `$env:PYTHONIOENCODING = "utf-8"`
+- gbx-py vendored in `converter/gbxpy/` (source: schadocalex/gbx-py)
+- `construct` library (`pip install construct`)
+- Claude Code Opus 4.7 in VSCode
 
-## Wichtige Pfade
+## Key Paths
 ```
-catalog/blocks.json              → Vollständiger TM2020 Blockkatalog
-tools/track_schema.json          → JSON-Schema für alle Track-Dateien
-converter/build.py               → JSON → .Map.Gbx Konverter
-converter/requirements.txt       → Python Dependencies
-tracks/{category}/{name}.json    → Claude-generierte Track-Daten
-tracks/{category}/{name}.Map.Gbx → Fertige Spieldatei (gitignored optional)
+tools/track_schema.json          → JSON schema for all track files
+converter/build.py               → JSON → .Map.Gbx converter
+converter/gbxpy/                 → vendored gbx-py library
+converter/template.Map.Gbx       → empty TM2020 map used as build base
+tracks/{category}/{name}/        → one folder per track
+  {name}.json                    → Claude-generated track data
+  {name}.Map.Gbx                 → built game file
+  {name}_preview.svg             → layout preview (optional)
 ```
 
-## TM2020 Maps-Ordner (Windows)
+## TM2020 Maps Folder (Windows)
 ```
-C:/Users/{USERNAME}/Documents/ManiaPlanet/Maps/My Maps/
+C:/Users/semyo/Documents/Trackmania/Maps/My Maps/
+```
+
+## Reference Maps for Parsing
+```
+C:/Users/semyo/Documents/Trackmania/Maps/My Maps/jantronix wurst.Map.Gbx   (291 blocks)
+C:/Users/semyo/Documents/Trackmania/Maps/My Maps/test_kurven.Map.Gbx        (13 blocks, S-curve reference)
+C:/Users/semyo/Documents/Trackmania/Maps/Downloaded/every platform block.Map.Gbx
 ```
 
 ## Workflow
-1. Validiere JSON gegen tools/track_schema.json
-2. Führe converter/build.py aus → .Map.Gbx
-3. Generiere SVG-Preview (optional)
-4. git add + commit + push
-5. Kopiere .Map.Gbx in TM2020 Maps-Ordner
+1. Validate JSON against `tools/track_schema.json`
+2. Run `converter/build.py` → `.Map.Gbx`
+3. `git add + commit + push`
+4. `.Map.Gbx` auto-deployed to TM2020 Maps folder by converter
 
-## Commit-Format
+## Commit Format
 ```
 🏎️ Add {name} ({category} | D{difficulty}/5 | C{creativity}/5)
 ```
 
-## Kategorien
+## Categories
 speedtech, fullspeed, tech, dirt, rally, stunts, ice, fun, lol, beginner
 
-## Nie verändern (nur Claude Chat)
-- catalog/blocks.json
-- tools/track_schema.json
+## Current Pipeline Status
+- JSON → .Map.Gbx loads in TM2020 ✅
+- Block names verified: `RoadTech*` prefix (no `Stadium` prefix) ✅
+- Y_OFFSET=8 confirmed correct (JSON y=1 → GBX y=9) ✅
+- Chunks 0x03043062/68/69 dropped before writing (block-count dependent) ✅
+- Block placement / rotations: fix in progress (test_kurven.Map.Gbx is ground-truth reference)
+
+## JSON Rotation Convention
+- 0 = North, 1 = East, 2 = South, 3 = West
+
+## Never Modify (Claude Web only)
+- `tools/track_schema.json` — schema stays stable
