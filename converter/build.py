@@ -52,93 +52,78 @@ GROUND_Y_JSON = 1  # JSON-y, bei dem ein Block direkt auf dem Editor-Boden steht
 #
 # Verifizierte Namen (aus realen TM2020-Editor-Saves geparst):
 #   • template.Map.Gbx           → RoadTechStart, RoadTechFinish
-#   • every platform block.Gbx   → vollständiger RoadTech-Katalog (148 Namen):
-#       RoadTechStraight, RoadTechCurve1..5, RoadTechChicaneX2/X3 Left/Right,
-#       RoadTechTiltStraight/Curve1..4, RoadTechSlope*, RoadTechRampLow/Med/
-#       High/VeryHigh, RoadTechDiag{Left,Right}Loop6X/11X, RoadTechNarrowCenter/
-#       Side, RoadTechHole, RoadTechPenalty(Dirt|Ice), TrackWallToRoadTech,
-#       GateCheckpoint, …
-#   • jantronix wurst.Gbx        → RoadBump*-Set (analog für Bump-Tracks)
+#   • every platform block.Gbx   → vollständiger RoadTech-Katalog (148 Namen)
+#   • jantronix wurst.Gbx        → RoadBump*-Set, zeigt Footprint-Verhalten:
+#       RoadBumpCurve1            = 1×1 Zelle  (Slalom: dir wechselt jede Zelle)
+#       RoadBumpCurve2            = 2×2 Zellen (Platzierung 2 Zellen versetzt)
+#       RoadBumpSlopeBase         = +1 y pro Zelle in Fahrtrichtung
+#       RoadBumpSlopeBase2        = +2 y pro Zelle (steiler)
 #
-# Muster: kein "Stadium"-Prefix. Schema = Road{Type}{Suffix}. Type für die
-# Standard-Tarmac-Strecke ist "Tech".
+# Footprint-Regel:
+# Unsere JSONs verwenden ein 1-Zelle-pro-Block-Raster (jeder Block = 1 Grid-
+# Cell, +1 y pro Slope-Schritt). Mehr-Zellen-Blöcke (Curve2..5, ChicaneX2/X3,
+# SlopeBase2, Loops) würden mit dem Folgeblock kollidieren ("Blöcke liegen
+# ineinander"). Daher mappen Curve2..5 und Chicane{Left,Right} per Default auf
+# RoadTechCurve1 (1×1) und Slope2 auf RoadTechSlopeBase (+1 y/Zelle). Wer
+# explizit Mehr-Zellen-Geometrie will, kann die expliziten IDs ChicaneX2/X3
+# bzw. RoadTechCurve2..5 / SlopeBase2 direkt nutzen — dann muss aber das JSON
+# entsprechend lückig platziert sein.
+#
+# Rotation: JSON 0/1/2/3 → North/East/South/West (TM2020-Konvention).
 
 BLOCK_MAP: dict[str, str] = {
     # Start / Finish / Checkpoint
     "StadiumRoadMainStart":          "RoadTechStart",
     "StadiumRoadMainFinish":         "RoadTechFinish",
     "StadiumRoadMainCheckpointIn":   "RoadTechCheckpoint",
-    "Checkpoint":                    "RoadTechStraight",  # via isWaypoint-Flag
+    "Checkpoint":                    "RoadTechStraight",  # Checkpoint via isWaypoint-Flag
 
     # Straight
     "StadiumRoadMainStraight":       "RoadTechStraight",
 
-    # Curves (1 = engste, 5 = weiteste)
+    # Curves — alle auf 1×1-Curve1 mappen (JSON-Layout = 1 Zelle pro Block)
     "StadiumRoadMainCurve1Right":    "RoadTechCurve1",
-    "StadiumRoadMainCurve1Left":     "RoadTechCurve1",
-    "StadiumRoadMainCurve2Right":    "RoadTechCurve2",
-    "StadiumRoadMainCurve2Left":     "RoadTechCurve2",
-    "StadiumRoadMainCurve2In":       "RoadTechCurve2",
-    "StadiumRoadMainCurve2Out":      "RoadTechCurve2",
-    "StadiumRoadMainCurve3Right":    "RoadTechCurve3",
-    "StadiumRoadMainCurve3Left":     "RoadTechCurve3",
-    "StadiumRoadMainCurve4Right":    "RoadTechCurve4",
-    "StadiumRoadMainCurve4Left":     "RoadTechCurve4",
-    "StadiumRoadMainCurve5Right":    "RoadTechCurve5",
-    "StadiumRoadMainCurve5Left":     "RoadTechCurve5",
+    "StadiumRoadMainCurve1Left":    "RoadTechCurve1",
+    "StadiumRoadMainCurve2Right":    "RoadTechCurve1",
+    "StadiumRoadMainCurve2Left":     "RoadTechCurve1",
+    "StadiumRoadMainCurve2In":       "RoadTechCurve1",
+    "StadiumRoadMainCurve2Out":      "RoadTechCurve1",
+    "StadiumRoadMainCurve3Right":    "RoadTechCurve1",
+    "StadiumRoadMainCurve3Left":     "RoadTechCurve1",
+    "StadiumRoadMainCurve4Right":    "RoadTechCurve1",
+    "StadiumRoadMainCurve4Left":     "RoadTechCurve1",
+    "StadiumRoadMainCurve5Right":    "RoadTechCurve1",
+    "StadiumRoadMainCurve5Left":     "RoadTechCurve1",
 
-    # Chicanes — echte X2/X3-Varianten existieren im Katalog
-    "StadiumRoadMainChicaneRight":   "RoadTechChicaneX2Right",
-    "StadiumRoadMainChicaneLeft":    "RoadTechChicaneX2Left",
+    # Chicanes — Default auf 1-Zelle-Curve1 (Slalom-Stil, kein Overlap).
+    # Explizite X2/X3-IDs landen auf den echten Mehr-Zellen-Chicanes.
+    "StadiumRoadMainChicaneRight":   "RoadTechCurve1",
+    "StadiumRoadMainChicaneLeft":    "RoadTechCurve1",
     "StadiumRoadMainChicaneX2Right": "RoadTechChicaneX2Right",
     "StadiumRoadMainChicaneX2Left":  "RoadTechChicaneX2Left",
     "StadiumRoadMainChicaneX3Right": "RoadTechChicaneX3Right",
     "StadiumRoadMainChicaneX3Left":  "RoadTechChicaneX3Left",
 
-    # Banking → Tilt-Blöcke
-    "StadiumRoadMainBankRight":      "RoadTechTiltStraight",
-    "StadiumRoadMainBankLeft":       "RoadTechTiltStraight",
+    # Banking — kein passendes 1-Zelle-Banking; Fallback auf Straight.
+    # Wer echtes TiltStraight (gebankter Straight) will, ID direkt nutzen.
+    "StadiumRoadMainBankRight":      "RoadTechStraight",
+    "StadiumRoadMainBankLeft":       "RoadTechStraight",
     "StadiumRoadMainTiltStraight":   "RoadTechTiltStraight",
-    "StadiumRoadMainTiltCurve1":     "RoadTechTiltCurve1",
-    "StadiumRoadMainTiltCurve2":     "RoadTechTiltCurve2",
-    "StadiumRoadMainTiltCurve3":     "RoadTechTiltCurve3",
-    "StadiumRoadMainTiltCurve4":     "RoadTechTiltCurve4",
 
-    # Slopes
+    # Slopes — JSON-Delta = +1 y/Zelle ⇒ SlopeBase (NICHT SlopeBase2).
     "StadiumRoadMainSlope1Up":       "RoadTechSlopeBase",
     "StadiumRoadMainSlope1Down":     "RoadTechSlopeBase",
-    "StadiumRoadMainSlope2Up":       "RoadTechSlopeBase2",
-    "StadiumRoadMainSlope2Down":     "RoadTechSlopeBase2",
-    "StadiumRoadMainSlopeStraight":  "RoadTechSlopeStraight",
-    "StadiumRoadMainSlopeStart":     "RoadTechSlopeStart2x1",
-    "StadiumRoadMainSlopeEnd":       "RoadTechSlopeEnd2x1",
-    "StadiumRoadMainSlopeUTop":      "RoadTechSlopeUTop",
-    "StadiumRoadMainSlopeUBottom":   "RoadTechSlopeUBottom",
+    "StadiumRoadMainSlope2Up":       "RoadTechSlopeBase",
+    "StadiumRoadMainSlope2Down":     "RoadTechSlopeBase",
 
-    # Ramps
-    "StadiumRoadMainRampLow":        "RoadTechRampLow",
-    "StadiumRoadMainRampMed":        "RoadTechRampMed",
-    "StadiumRoadMainRampHigh":       "RoadTechRampHigh",
-    "StadiumRoadMainRampVeryHigh":   "RoadTechRampVeryHigh",
-
-    # Loops
-    "StadiumRoadMainLoopLeft":       "RoadTechDiagLeftLoop6X",
-    "StadiumRoadMainLoopRight":      "RoadTechDiagRightLoop6X",
-    "StadiumRoadMainLoop6Left":      "RoadTechDiagLeftLoop6X",
-    "StadiumRoadMainLoop6Right":     "RoadTechDiagRightLoop6X",
-    "StadiumRoadMainLoop11Left":     "RoadTechDiagLeftLoop11X",
-    "StadiumRoadMainLoop11Right":    "RoadTechDiagRightLoop11X",
-
-    # Narrow
-    "StadiumRoadMainNarrowCenter":   "RoadTechNarrowCenter",
-    "StadiumRoadMainNarrowSide":     "RoadTechNarrowSide",
-
-    # Special
+    # Special — alle 1-Zelle-Footprint
     "StadiumRoadMainHole":           "RoadTechHole",
     "StadiumRoadMainPenalty":        "RoadTechPenalty",
     "StadiumRoadMainPenaltyDirt":    "RoadTechPenaltyDirt",
     "StadiumRoadMainPenaltyIce":     "RoadTechPenaltyIce",
     "StadiumRoadMainTurbo":          "RoadTechSpecialTurbo",
+    "StadiumRoadMainNarrowCenter":   "RoadTechNarrowCenter",
+    "StadiumRoadMainNarrowSide":     "RoadTechNarrowSide",
 
     # Walls — kein passendes RoadTech-Pendant; Fallback auf Straight
     "StadiumRoadMainWallLeft":       "RoadTechStraight",
