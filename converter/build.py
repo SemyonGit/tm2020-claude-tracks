@@ -116,12 +116,31 @@ def make_block(name: str, x: int, y: int, z: int, rotation: int,
 
 BLOCKS_CHUNK_ID = 0x0304301F
 
+# Skippable Chunks, deren Array-Längen via get_chunk(...).Blocks an die
+# Block-Anzahl gekoppelt sind. Sobald wir die Block-Liste austauschen,
+# stimmen ihre internen Array-Längen nicht mehr — gbx-py kann sie dann
+# nicht mehr serialisieren (SelectError "no subconstruct matched").
+# Da alle drei skippable und rein kosmetisch sind (Difficulty-Farben,
+# Lightmap-Qualität, Macroblock-Indizes), entfernen wir sie vor dem
+# Schreiben. TM2020 lädt die Map auch ohne diese Chunks problemlos.
+BLOCK_DEPENDENT_CHUNKS = (0x03043062, 0x03043068, 0x03043069)
+
 
 def find_blocks_chunk(data) -> Container | None:
     body = data.body
     if BLOCKS_CHUNK_ID in body:
         return body[BLOCKS_CHUNK_ID]
     return None
+
+
+def strip_block_dependent_chunks(data) -> list[int]:
+    body = data.body
+    dropped = []
+    for cid in BLOCK_DEPENDENT_CHUNKS:
+        if cid in body:
+            del body[cid]
+            dropped.append(cid)
+    return dropped
 
 
 def find_tm2020_maps_dir() -> Path | None:
@@ -182,6 +201,11 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False) -> Path |
     chunk.Blocks = block_instances
     if "mapName" in chunk:
         chunk.mapName = name
+
+    dropped = strip_block_dependent_chunks(data)
+    if dropped:
+        print(f"🗑  Drop blockabhängige Chunks: "
+              f"{', '.join(f'0x{c:08X}' for c in dropped)}")
 
     out_path = json_path.parent / f"{name}.Map.Gbx"
     out_path.write_bytes(generate_file(data))
