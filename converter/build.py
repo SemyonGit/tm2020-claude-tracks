@@ -95,10 +95,12 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainCurve5Right":    "RoadTechCurve1",
     "StadiumRoadMainCurve5Left":     "RoadTechCurve1",
 
-    # Chicanes — Default auf 1-Zelle-Curve1 (Slalom-Stil, kein Overlap).
+    # Chicanes — JSON-Layout platziert sie in gerader Linie (kein x/z-Versatz),
+    # also In-Line-Jog-Visual ohne Richtungsänderung. Curve1 würde Anschluss-
+    # Faces falsch ausrichten; daher Straight (Strecken-Geometrie bleibt heil).
     # Explizite X2/X3-IDs landen auf den echten Mehr-Zellen-Chicanes.
-    "StadiumRoadMainChicaneRight":   "RoadTechCurve1",
-    "StadiumRoadMainChicaneLeft":    "RoadTechCurve1",
+    "StadiumRoadMainChicaneRight":   "RoadTechStraight",
+    "StadiumRoadMainChicaneLeft":    "RoadTechStraight",
     "StadiumRoadMainChicaneX2Right": "RoadTechChicaneX2Right",
     "StadiumRoadMainChicaneX2Left":  "RoadTechChicaneX2Left",
     "StadiumRoadMainChicaneX3Right": "RoadTechChicaneX3Right",
@@ -130,7 +132,27 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainWallRight":      "RoadTechStraight",
 }
 
-DIR_NAMES = ("North", "East", "South", "West")
+# ─── Rotation-Mapping ──────────────────────────────────────────────────────────
+# JSON nutzt Kompass-Konvention: rot 0=North(-z) 1=East(+x) 2=South(+z) 3=West(-x).
+# TM2020 hat invertierte Z-Achse: dir 0=North(+z) 1=East(+x) 2=South(-z) 3=West(-x).
+# Verifiziert via test_kurven.Map.Gbx (manuell gebaut): Straights mit +z-Fahrt-
+# richtung tragen dir=North; Slopes mit -x-Fahrtrichtung tragen dir=West.
+#
+# Für Curves gibt der dir-Index die Block-Rotation an (welche zwei Faces die
+# Anschlüsse haben): dir=North → W+N, East → S+W, South → S+E, West → E+N.
+# Empirisch aus silvercut.json (4 Eck-Curves) abgeleitet:
+#   rot=1 (Auto fährt +x rein, +z raus) → W+N → dir=North
+#   rot=2 (+z rein, -x raus)            → S+W → dir=East
+#   rot=3 (-x rein, -z raus)            → E+S → dir=South
+#   rot=0 (-z rein, +x raus)            → N+E → dir=West
+# Spiegelbildlich für Left-Curves: Identity-Mapping.
+
+DIR_NAMES = ("North", "East", "South", "West")  # TM2020 dir-int → Name
+
+# Mapping: JSON rot (0..3) → TM2020 dir int (0..3)
+STRAIGHT_DIR_MAP = (2, 1, 0, 3)      # für Straights/Start/Finish/Slope/Tilt
+CURVE_RIGHT_DIR_MAP = (3, 0, 1, 2)   # für *Right / *In Curves
+CURVE_LEFT_DIR_MAP = (0, 1, 2, 3)    # für *Left / *Out Curves (Spiegel)
 
 
 # ─── Block-Konstruktion ────────────────────────────────────────────────────────
@@ -143,7 +165,24 @@ def is_waypoint_block(json_id: str) -> bool:
     return any(token in json_id for token in ("Start", "Finish", "Checkpoint"))
 
 
-def make_block(name: str, x: int, y: int, z: int, rotation: int,
+def tm2020_dir(json_id: str, json_rot: int) -> str:
+    """Übersetze JSON-Rotation in TM2020-dir-Namen.
+
+    Curves brauchen ein anderes Mapping als gerade Blöcke, weil dir bei Curves
+    die Block-Rotation kodiert (welche Faces verbunden sind), nicht die Fahrt-
+    richtung. Nur echte Eck-Curves (StadiumRoadMain*Curve{N}{Right,Left,In,Out})
+    bekommen die Curve-Maps; Chicanes/Straights/Slopes/Banks gehen den Straight-Pfad.
+    """
+    rot = json_rot & 3
+    if "Curve" in json_id:
+        if json_id.endswith("Right") or json_id.endswith("In"):
+            return DIR_NAMES[CURVE_RIGHT_DIR_MAP[rot]]
+        if json_id.endswith("Left") or json_id.endswith("Out"):
+            return DIR_NAMES[CURVE_LEFT_DIR_MAP[rot]]
+    return DIR_NAMES[STRAIGHT_DIR_MAP[rot]]
+
+
+def make_block(name: str, x: int, y: int, z: int, dir_name: str,
                is_waypoint: bool = False, is_ground: bool = True) -> Container:
     """Baut einen GbxBlockInstance Container für gbx-py."""
     flags = Container(
@@ -165,7 +204,7 @@ def make_block(name: str, x: int, y: int, z: int, rotation: int,
     )
     return Container(
         name=name,
-        dir=DIR_NAMES[rotation & 3],
+        dir=dir_name,
         coords=Container(x=int(x), y=int(y), z=int(z)),
         flags=flags,
         skinParams=None,
@@ -235,7 +274,7 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False) -> Path |
         inst = make_block(
             name=real,
             x=b["x"], y=json_y + Y_OFFSET, z=b["z"],
-            rotation=b.get("rotation", 0),
+            dir_name=tm2020_dir(json_id, b.get("rotation", 0)),
             is_waypoint=is_wp,
             is_ground=(json_y == GROUND_Y_JSON),
         )
