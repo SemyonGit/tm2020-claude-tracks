@@ -95,7 +95,6 @@ tracks/speedtech/razorline/
 |-------|----------|
 | `converter/build.py` | JSON → .Map.Gbx Konverter |
 | `converter/requirements.txt` | Python-Abhängigkeiten |
-| `catalog/blocks.json` | Vollständiger TM2020 Blockkatalog |
 | `tools/claude_code_agent.md` | Claude Code Anweisungen |
 | `tools/track_schema.json` | JSON-Schema für Track-Dateien |
 
