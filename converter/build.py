@@ -40,30 +40,43 @@ TM2020_MAP_DIRS = [
 ]
 
 # ─── Block-Mapping ─────────────────────────────────────────────────────────────
-# Unsere JSON-IDs → echte TM2020 Stadium-Block-Namen (verifiziert).
+# Unsere JSON-IDs → echte TM2020-Block-Namen.
+#
+# Verifizierte Namen (aus realen TM2020-Editor-Saves geparst):
+#   • Template.Map.Gbx     →  RoadTechStart, RoadTechFinish
+#   • jantronix wurst.Gbx  →  RoadBumpStart/Finish/Checkpoint/Straight/Curve1/
+#                             Curve2/SlopeBase/SlopeBase2/SpecialTurbo,
+#                             TrackWallStraightPillar, TrackWallCurve1Pillar,
+#                             TrackWallCurve2Pillar, TrackWallDeadendRoundPillar
+#
+# Muster: kein "Stadium"-Prefix. Schema = Road{Type}{Suffix}. Type für die
+# Standard-Tarmac-Strecke ist "Tech" (von RoadTechStart/Finish im Template
+# bestätigt); übrige Suffixe sind analog zum vollständig geparsten RoadBump-Set
+# abgeleitet. Chicane/Bank/Wall haben in den geparsten Maps kein eindeutiges
+# Pendant — fallen vorerst auf Curve1/Straight zurück.
 
 BLOCK_MAP: dict[str, str] = {
-    "StadiumRoadMainStraight":      "StadiumRoadMain",
-    "StadiumRoadMainStart":         "StadiumRoadMainStartLine",
-    "StadiumRoadMainFinish":        "StadiumRoadMainFinishLine",
-    "StadiumRoadMainCheckpointIn":  "StadiumRoadMainCheckpoint",
-    "StadiumRoadMainCurve1Right":   "StadiumRoadMainGTCurve2",
-    "StadiumRoadMainCurve1Left":    "StadiumRoadMainGTCurve2",
-    "StadiumRoadMainCurve2Right":   "StadiumRoadMainGTCurve3",
-    "StadiumRoadMainCurve2Left":    "StadiumRoadMainGTCurve3",
-    "StadiumRoadMainCurve3Right":   "StadiumRoadMainGTCurve4",
-    "StadiumRoadMainCurve3Left":    "StadiumRoadMainGTCurve4",
-    "StadiumRoadMainChicaneRight":  "StadiumCircuitBase",
-    "StadiumRoadMainChicaneLeft":   "StadiumCircuitBase",
-    "StadiumRoadMainBankRight":     "StadiumRoadMainFWTilt",
-    "StadiumRoadMainBankLeft":      "StadiumRoadMainFWTilt",
-    "StadiumRoadMainSlope1Up":      "StadiumRoadMainSlopeBase",
-    "StadiumRoadMainSlope1Down":    "StadiumRoadMainSlopeBase",
-    "StadiumRoadMainSlope2Up":      "StadiumRoadMainSlopeBase2",
-    "StadiumRoadMainSlope2Down":    "StadiumRoadMainSlopeBase2",
-    "StadiumRoadMainWallLeft":      "StadiumPlatformRoad",
-    "StadiumRoadMainWallRight":     "StadiumPlatformRoad",
-    "StadiumRoadMainTurbo":         "StadiumRoadMainTurbo",
+    "StadiumRoadMainStraight":      "RoadTechStraight",
+    "StadiumRoadMainStart":         "RoadTechStart",
+    "StadiumRoadMainFinish":        "RoadTechFinish",
+    "StadiumRoadMainCheckpointIn":  "RoadTechCheckpoint",
+    "StadiumRoadMainCurve1Right":   "RoadTechCurve1",
+    "StadiumRoadMainCurve1Left":    "RoadTechCurve1",
+    "StadiumRoadMainCurve2Right":   "RoadTechCurve2",
+    "StadiumRoadMainCurve2Left":    "RoadTechCurve2",
+    "StadiumRoadMainCurve3Right":   "RoadTechCurve3",
+    "StadiumRoadMainCurve3Left":    "RoadTechCurve3",
+    "StadiumRoadMainChicaneRight":  "RoadTechCurve1",
+    "StadiumRoadMainChicaneLeft":   "RoadTechCurve1",
+    "StadiumRoadMainBankRight":     "RoadTechStraight",
+    "StadiumRoadMainBankLeft":      "RoadTechStraight",
+    "StadiumRoadMainSlope1Up":      "RoadTechSlopeBase",
+    "StadiumRoadMainSlope1Down":    "RoadTechSlopeBase",
+    "StadiumRoadMainSlope2Up":      "RoadTechSlopeBase2",
+    "StadiumRoadMainSlope2Down":    "RoadTechSlopeBase2",
+    "StadiumRoadMainWallLeft":      "RoadTechStraight",
+    "StadiumRoadMainWallRight":     "RoadTechStraight",
+    "StadiumRoadMainTurbo":         "RoadTechSpecialTurbo",
 }
 
 DIR_NAMES = ("North", "East", "South", "West")
