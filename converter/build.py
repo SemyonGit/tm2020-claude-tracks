@@ -39,44 +39,110 @@ TM2020_MAP_DIRS = [
     Path("/mnt/c/Users") / (Path.home().name) / "Documents" / "Trackmania" / "Maps" / "My Maps",
 ]
 
+# ─── Koordinatensystem ─────────────────────────────────────────────────────────
+# TM2020-Stadium-Maps haben den Editor-Boden bei y=8; Bodenblöcke liegen also
+# auf y=9 mit isGround=True (verifiziert via template.Map.Gbx: RoadTechStart
+# bei y=9). Unsere JSONs nutzen y=1 als Bodenebene (TMNF-Konvention), daher
+# Offset +8 beim Schreiben.
+Y_OFFSET = 8
+GROUND_Y_JSON = 1  # JSON-y, bei dem ein Block direkt auf dem Editor-Boden steht
+
 # ─── Block-Mapping ─────────────────────────────────────────────────────────────
 # Unsere JSON-IDs → echte TM2020-Block-Namen.
 #
 # Verifizierte Namen (aus realen TM2020-Editor-Saves geparst):
-#   • Template.Map.Gbx     →  RoadTechStart, RoadTechFinish
-#   • jantronix wurst.Gbx  →  RoadBumpStart/Finish/Checkpoint/Straight/Curve1/
-#                             Curve2/SlopeBase/SlopeBase2/SpecialTurbo,
-#                             TrackWallStraightPillar, TrackWallCurve1Pillar,
-#                             TrackWallCurve2Pillar, TrackWallDeadendRoundPillar
+#   • template.Map.Gbx           → RoadTechStart, RoadTechFinish
+#   • every platform block.Gbx   → vollständiger RoadTech-Katalog (148 Namen):
+#       RoadTechStraight, RoadTechCurve1..5, RoadTechChicaneX2/X3 Left/Right,
+#       RoadTechTiltStraight/Curve1..4, RoadTechSlope*, RoadTechRampLow/Med/
+#       High/VeryHigh, RoadTechDiag{Left,Right}Loop6X/11X, RoadTechNarrowCenter/
+#       Side, RoadTechHole, RoadTechPenalty(Dirt|Ice), TrackWallToRoadTech,
+#       GateCheckpoint, …
+#   • jantronix wurst.Gbx        → RoadBump*-Set (analog für Bump-Tracks)
 #
 # Muster: kein "Stadium"-Prefix. Schema = Road{Type}{Suffix}. Type für die
-# Standard-Tarmac-Strecke ist "Tech" (von RoadTechStart/Finish im Template
-# bestätigt); übrige Suffixe sind analog zum vollständig geparsten RoadBump-Set
-# abgeleitet. Chicane/Bank/Wall haben in den geparsten Maps kein eindeutiges
-# Pendant — fallen vorerst auf Curve1/Straight zurück.
+# Standard-Tarmac-Strecke ist "Tech".
 
 BLOCK_MAP: dict[str, str] = {
-    "StadiumRoadMainStraight":      "RoadTechStraight",
-    "StadiumRoadMainStart":         "RoadTechStart",
-    "StadiumRoadMainFinish":        "RoadTechFinish",
-    "StadiumRoadMainCheckpointIn":  "RoadTechCheckpoint",
-    "StadiumRoadMainCurve1Right":   "RoadTechCurve1",
-    "StadiumRoadMainCurve1Left":    "RoadTechCurve1",
-    "StadiumRoadMainCurve2Right":   "RoadTechCurve2",
-    "StadiumRoadMainCurve2Left":    "RoadTechCurve2",
-    "StadiumRoadMainCurve3Right":   "RoadTechCurve3",
-    "StadiumRoadMainCurve3Left":    "RoadTechCurve3",
-    "StadiumRoadMainChicaneRight":  "RoadTechCurve1",
-    "StadiumRoadMainChicaneLeft":   "RoadTechCurve1",
-    "StadiumRoadMainBankRight":     "RoadTechStraight",
-    "StadiumRoadMainBankLeft":      "RoadTechStraight",
-    "StadiumRoadMainSlope1Up":      "RoadTechSlopeBase",
-    "StadiumRoadMainSlope1Down":    "RoadTechSlopeBase",
-    "StadiumRoadMainSlope2Up":      "RoadTechSlopeBase2",
-    "StadiumRoadMainSlope2Down":    "RoadTechSlopeBase2",
-    "StadiumRoadMainWallLeft":      "RoadTechStraight",
-    "StadiumRoadMainWallRight":     "RoadTechStraight",
-    "StadiumRoadMainTurbo":         "RoadTechSpecialTurbo",
+    # Start / Finish / Checkpoint
+    "StadiumRoadMainStart":          "RoadTechStart",
+    "StadiumRoadMainFinish":         "RoadTechFinish",
+    "StadiumRoadMainCheckpointIn":   "RoadTechCheckpoint",
+    "Checkpoint":                    "RoadTechStraight",  # via isWaypoint-Flag
+
+    # Straight
+    "StadiumRoadMainStraight":       "RoadTechStraight",
+
+    # Curves (1 = engste, 5 = weiteste)
+    "StadiumRoadMainCurve1Right":    "RoadTechCurve1",
+    "StadiumRoadMainCurve1Left":     "RoadTechCurve1",
+    "StadiumRoadMainCurve2Right":    "RoadTechCurve2",
+    "StadiumRoadMainCurve2Left":     "RoadTechCurve2",
+    "StadiumRoadMainCurve2In":       "RoadTechCurve2",
+    "StadiumRoadMainCurve2Out":      "RoadTechCurve2",
+    "StadiumRoadMainCurve3Right":    "RoadTechCurve3",
+    "StadiumRoadMainCurve3Left":     "RoadTechCurve3",
+    "StadiumRoadMainCurve4Right":    "RoadTechCurve4",
+    "StadiumRoadMainCurve4Left":     "RoadTechCurve4",
+    "StadiumRoadMainCurve5Right":    "RoadTechCurve5",
+    "StadiumRoadMainCurve5Left":     "RoadTechCurve5",
+
+    # Chicanes — echte X2/X3-Varianten existieren im Katalog
+    "StadiumRoadMainChicaneRight":   "RoadTechChicaneX2Right",
+    "StadiumRoadMainChicaneLeft":    "RoadTechChicaneX2Left",
+    "StadiumRoadMainChicaneX2Right": "RoadTechChicaneX2Right",
+    "StadiumRoadMainChicaneX2Left":  "RoadTechChicaneX2Left",
+    "StadiumRoadMainChicaneX3Right": "RoadTechChicaneX3Right",
+    "StadiumRoadMainChicaneX3Left":  "RoadTechChicaneX3Left",
+
+    # Banking → Tilt-Blöcke
+    "StadiumRoadMainBankRight":      "RoadTechTiltStraight",
+    "StadiumRoadMainBankLeft":       "RoadTechTiltStraight",
+    "StadiumRoadMainTiltStraight":   "RoadTechTiltStraight",
+    "StadiumRoadMainTiltCurve1":     "RoadTechTiltCurve1",
+    "StadiumRoadMainTiltCurve2":     "RoadTechTiltCurve2",
+    "StadiumRoadMainTiltCurve3":     "RoadTechTiltCurve3",
+    "StadiumRoadMainTiltCurve4":     "RoadTechTiltCurve4",
+
+    # Slopes
+    "StadiumRoadMainSlope1Up":       "RoadTechSlopeBase",
+    "StadiumRoadMainSlope1Down":     "RoadTechSlopeBase",
+    "StadiumRoadMainSlope2Up":       "RoadTechSlopeBase2",
+    "StadiumRoadMainSlope2Down":     "RoadTechSlopeBase2",
+    "StadiumRoadMainSlopeStraight":  "RoadTechSlopeStraight",
+    "StadiumRoadMainSlopeStart":     "RoadTechSlopeStart2x1",
+    "StadiumRoadMainSlopeEnd":       "RoadTechSlopeEnd2x1",
+    "StadiumRoadMainSlopeUTop":      "RoadTechSlopeUTop",
+    "StadiumRoadMainSlopeUBottom":   "RoadTechSlopeUBottom",
+
+    # Ramps
+    "StadiumRoadMainRampLow":        "RoadTechRampLow",
+    "StadiumRoadMainRampMed":        "RoadTechRampMed",
+    "StadiumRoadMainRampHigh":       "RoadTechRampHigh",
+    "StadiumRoadMainRampVeryHigh":   "RoadTechRampVeryHigh",
+
+    # Loops
+    "StadiumRoadMainLoopLeft":       "RoadTechDiagLeftLoop6X",
+    "StadiumRoadMainLoopRight":      "RoadTechDiagRightLoop6X",
+    "StadiumRoadMainLoop6Left":      "RoadTechDiagLeftLoop6X",
+    "StadiumRoadMainLoop6Right":     "RoadTechDiagRightLoop6X",
+    "StadiumRoadMainLoop11Left":     "RoadTechDiagLeftLoop11X",
+    "StadiumRoadMainLoop11Right":    "RoadTechDiagRightLoop11X",
+
+    # Narrow
+    "StadiumRoadMainNarrowCenter":   "RoadTechNarrowCenter",
+    "StadiumRoadMainNarrowSide":     "RoadTechNarrowSide",
+
+    # Special
+    "StadiumRoadMainHole":           "RoadTechHole",
+    "StadiumRoadMainPenalty":        "RoadTechPenalty",
+    "StadiumRoadMainPenaltyDirt":    "RoadTechPenaltyDirt",
+    "StadiumRoadMainPenaltyIce":     "RoadTechPenaltyIce",
+    "StadiumRoadMainTurbo":          "RoadTechSpecialTurbo",
+
+    # Walls — kein passendes RoadTech-Pendant; Fallback auf Straight
+    "StadiumRoadMainWallLeft":       "RoadTechStraight",
+    "StadiumRoadMainWallRight":      "RoadTechStraight",
 }
 
 DIR_NAMES = ("North", "East", "South", "West")
@@ -180,11 +246,13 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False) -> Path |
         json_id = b["id"]
         real = resolve_block(json_id)
         is_wp = (i in cps) or is_waypoint_block(json_id)
+        json_y = b["y"]
         inst = make_block(
             name=real,
-            x=b["x"], y=b["y"], z=b["z"],
+            x=b["x"], y=json_y + Y_OFFSET, z=b["z"],
             rotation=b.get("rotation", 0),
             is_waypoint=is_wp,
+            is_ground=(json_y == GROUND_Y_JSON),
         )
         block_instances.append(inst)
 
