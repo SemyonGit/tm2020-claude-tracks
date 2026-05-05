@@ -66,3 +66,23 @@ speedtech, fullspeed, tech, dirt, rally, stunts, ice, fun, lol, beginner
 
 ## Never Modify (Claude Web only)
 - `tools/track_schema.json` — schema stays stable
+
+## Cross-Session Continuity
+After EVERY session where something changed (new fix, new discovery, new block mapping,
+pipeline change, anything relevant):
+
+Update `tools/kontext.md` to reflect the latest project state.
+This file is the single source of truth for cross-session continuity.
+It is read at the start of every new Claude Code session.
+
+Always include in kontext.md:
+- Current pipeline status (what works, what doesn't)
+- Latest BLOCK_MAP
+- Latest fixes and discoveries
+- Current known issues
+- Next steps
+
+After updating kontext.md always commit:
+```
+git add tools/kontext.md && git commit -m "📝 Update kontext.md"
+```
