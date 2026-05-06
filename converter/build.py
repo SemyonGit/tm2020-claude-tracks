@@ -383,21 +383,32 @@ def is_waypoint_block(json_id: str) -> bool:
 def tm2020_dir(json_id: str, json_rot: int) -> str:
     """Translate JSON rotation (0..3) to TM2020 dir name.
 
-    Curve cells need a different map than straights because dir encodes
-    *which two faces are open* (entry+exit), not heading direction.
+    Three classes of blocks, in priority order:
 
-    Detection: only true 1×1 corner curves get the curve maps. Block IDs
-    must contain "Curve" AND end in Right/Left/In/Out. Everything else
-    (chicanes, slopes, banks, straights, branches, tilt-transitions) uses
-    the straight map. New IDs without R/L suffix fall through to straight,
-    which is fine for non-corner blocks.
+    1. Waypoints (Start, Finish, Checkpoint) — these are gates the car drives
+       THROUGH. Their dir must equal what a Straight at the same position would
+       have, so the gate is perpendicular to the road and the car enters the
+       block facing the driving direction. Always STRAIGHT_DIR_MAP, regardless
+       of any "Curve"/"In"/"Out" tokens that might appear in waypoint ID variants.
+
+    2. True 1×1 corner curves (ID contains "Curve" AND ends in Right/Left/In/Out)
+       — dir encodes which TWO cell faces are open (entry+exit), not heading.
+       Right/In → CURVE_RIGHT_DIR_MAP, Left/Out → CURVE_LEFT_DIR_MAP.
+
+    3. Everything else (straights, slopes, banks, chicanes, branches,
+       tilt-transitions) — dir = heading direction → STRAIGHT_DIR_MAP.
     """
     rot = json_rot & 3
+    # 1. Waypoints face the driving direction (same as a straight at this rot).
+    if is_waypoint_block(json_id):
+        return DIR_NAMES[STRAIGHT_DIR_MAP[rot]]
+    # 2. True corner curves: pick the curve map by Right/Left/In/Out suffix.
     if "Curve" in json_id:
         if json_id.endswith("Right") or json_id.endswith("In"):
             return DIR_NAMES[CURVE_RIGHT_DIR_MAP[rot]]
         if json_id.endswith("Left") or json_id.endswith("Out"):
             return DIR_NAMES[CURVE_LEFT_DIR_MAP[rot]]
+    # 3. Everything else: face the driving direction.
     return DIR_NAMES[STRAIGHT_DIR_MAP[rot]]
 
 
