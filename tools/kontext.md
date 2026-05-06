@@ -63,7 +63,7 @@ Claude Code commits: git add . && git commit -m "🏎️ ..." && git push
 | Block placement / rotations | ✅ Fixed |
 | Curves connecting to straights | ✅ Fixed + verified |
 | Down slopes (dir flip + y offset) | ✅ Fixed (2026-05-06) |
-| Full block catalog | ⬜ Pending |
+| Full block catalog | ✅ 120 blocks verified (catalog/blocks.json) |
 | Kacky-style blocks | ⬜ Pending |
 
 ---
@@ -241,12 +241,27 @@ for i, b in enumerate(chunk.Blocks):
 
 ---
 
-## Block Catalog Resource
-**https://item.mania-exchange.com/blocks?collections=5**
-Select: Trackmania (2020) → Stadium
-Contains all 13 official block categories for the Advanced Editor.
-Each category expands into a full tree of variants (curves, slopes etc.)
-Use this to find correct block names for Advanced Editor blocks.
+## Block Catalog (VERIFIED)
+120 block names verified from mania-exchange image API (200=valid, 404=skip).
+Images: `catalog/block_images/{BlockName}.png`
+Full list: `catalog/blocks.json`
+Script: `catalog/fetch_blocks.py`
+
+Key groups confirmed in catalog:
+- `RoadTech*` – Start, Finish, Checkpoint, Straight, Curve1-4, SlopeBase/2, SpecialTurbo/Boost/Boost2
+- `RoadBump*` – same set as RoadTech
+- `RoadDirt*` – same set
+- `RoadIce*` – only Start, Straight, SpecialTurbo/Boost/Boost2 (no curves/checkpoints/finish!)
+- `PlatformTech/Grass/Dirt/Ice*` – Base, Curve1-3, Slope, Loops, Start/Finish/Checkpoint (Kacky blocks!)
+- `TrackWall*` – Straight, Curve1-4, SlopeBase/2, DeadendRound
+- `DecoWall*` – Base, Curve1-4, SlopeBase, LoopStart/End
+
+NOT in catalog (wrong names – now fall back to RoadTechStraight in build.py):
+- RoadTechChicane* (no chicane block exists in RoadTech surface)
+- RoadTechHole, RoadTechPenalty*, RoadTechNarrow*, RoadTechTiltStraight
+
+Map viewer (no TM2020 needed): https://gbx.bigbang1112.cz/tool/map-viewer-engine
+Upload any .Map.Gbx to view 3D layout in browser.
 
 ---
 
@@ -290,8 +305,8 @@ CURVE_RIGHT_DIR_MAP = (3,0,1,2) verified correct for all 4 corners of silvercut.
    - test_straights.Map.Gbx
    - test_chicanes.Map.Gbx
 4. Test left curves (StadiumRoadMainCurve1Left) — CURVE_LEFT_DIR_MAP not yet empirically tested
-5. Explore item.mania-exchange.com Advanced Editor block catalog
-6. Expand BLOCK_MAP with real Advanced Editor block names
+5. ✅ Block catalog downloaded — 120 verified names in catalog/blocks.json + images
+6. Expand BLOCK_MAP with PlatformTech* blocks (key for Kacky-style maps)
 7. Generate first fully drivable connected track
 8. Generate first D5/5 brutal track
 9. Start working toward Kacky-style maps 🎯
