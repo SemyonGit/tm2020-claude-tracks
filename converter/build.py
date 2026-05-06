@@ -332,30 +332,45 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainRampLow":                               "RoadTechRampLow",
 }
 
-# ─── Rotation-Mapping ──────────────────────────────────────────────────────────
-# JSON nutzt Kompass-Konvention: rot 0=North(-z) 1=East(+x) 2=South(+z) 3=West(-x).
-# TM2020 hat invertierte Z-Achse: dir 0=North(+z) 1=East(+x) 2=South(-z) 3=West(-x).
-# Verifiziert via test_kurven.Map.Gbx (manuell gebaut): Straights mit +z-Fahrt-
-# richtung tragen dir=North; Slopes mit -x-Fahrtrichtung tragen dir=West.
+# ─── Rotation Mapping ──────────────────────────────────────────────────────────
+# JSON uses TMNF compass convention (rot index → car heading vector):
+#   rot 0 = facing TMNF-N → car heads -z
+#   rot 1 = facing TMNF-E → car heads +x
+#   rot 2 = facing TMNF-S → car heads +z
+#   rot 3 = facing TMNF-W → car heads -x
 #
-# Für Curves gibt der dir-Index die Block-Rotation an (welche zwei Faces die
-# Anschlüsse haben): dir=North → W+N, East → S+W, South → S+E, West → E+N.
-# Empirisch aus silvercut.json (4 Eck-Curves) abgeleitet:
-#   rot=1 (Auto fährt +x rein, +z raus) → W+N → dir=North
-#   rot=2 (+z rein, -x raus)            → S+W → dir=East
-#   rot=3 (-x rein, -z raus)            → E+S → dir=South
-#   rot=0 (-z rein, +x raus)            → N+E → dir=West
-# Spiegelbildlich für Left-Curves: Identity-Mapping.
+# TM2020 has flipped z-axis (verified from test_kurven.Map.Gbx where
+# straight blocks heading +z all carry dir=North):
+#   dir=North(0) = +z  | dir=East(1)  = +x
+#   dir=South(2) = -z  | dir=West(3)  = -x
+#
+# So for straights/slopes/start/finish, JSON rot R → TM2020 dir
+#   {2, 1, 0, 3}[R]   (mirror of Z, X stays, the only swap is N↔S).
+#
+# For 1×1 curves, the dir field encodes which TWO cell faces are open
+# (entry and exit). Verified opening pairs from test_kurven curve cells:
+#   dir=North → {W, N} | dir=East → {S, W}
+#   dir=South → {S, E} | dir=West → {E, N}
+#
+# A "Right" curve in JSON = TMNF-right turn = (R+1)%4 new heading.
+# A "Left"  curve in JSON = TMNF-left  turn = (R-1)%4 new heading.
+# (TMNF-right is geometrically a TM2020-LEFT turn because the z-axis is flipped,
+# but the openings calculation gives the same answer either way.)
+#
+# All three maps below are derived analytically AND verified by parsing
+# test_kurven.Map.Gbx (8 curve cells, all match):
+#   cell (16,23) East   cell (15,23) West   cell (15,24) South   cell (16,24) North
+#   cell (16,26) South  cell (17,26) North  cell (17,27) East    cell (16,27) West
 
-DIR_NAMES = ("North", "East", "South", "West")  # TM2020 dir-int → Name
+DIR_NAMES = ("North", "East", "South", "West")  # TM2020 dir int → name
 
-# Mapping: JSON rot (0..3) → TM2020 dir int (0..3)
-STRAIGHT_DIR_MAP = (2, 1, 0, 3)      # für Straights/Start/Finish/Slope/Tilt
-CURVE_RIGHT_DIR_MAP = (3, 0, 1, 2)   # für *Right / *In Curves
-CURVE_LEFT_DIR_MAP = (0, 1, 2, 3)    # für *Left / *Out Curves (Spiegel)
+# JSON rot (0..3) → TM2020 dir int (0..3)
+STRAIGHT_DIR_MAP    = (2, 1, 0, 3)   # straights, start, finish, slopes, tilt, chicanes
+CURVE_RIGHT_DIR_MAP = (3, 0, 1, 2)   # *Right / *In  curves (TMNF-right turn)
+CURVE_LEFT_DIR_MAP  = (0, 1, 2, 3)   # *Left  / *Out curves (TMNF-left  turn)
 
 
-# ─── Block-Konstruktion ────────────────────────────────────────────────────────
+# ─── Block construction ────────────────────────────────────────────────────────
 
 def resolve_block(json_id: str) -> str:
     return BLOCK_MAP.get(json_id, json_id)
@@ -366,12 +381,16 @@ def is_waypoint_block(json_id: str) -> bool:
 
 
 def tm2020_dir(json_id: str, json_rot: int) -> str:
-    """Übersetze JSON-Rotation in TM2020-dir-Namen.
+    """Translate JSON rotation (0..3) to TM2020 dir name.
 
-    Curves brauchen ein anderes Mapping als gerade Blöcke, weil dir bei Curves
-    die Block-Rotation kodiert (welche Faces verbunden sind), nicht die Fahrt-
-    richtung. Nur echte Eck-Curves (StadiumRoadMain*Curve{N}{Right,Left,In,Out})
-    bekommen die Curve-Maps; Chicanes/Straights/Slopes/Banks gehen den Straight-Pfad.
+    Curve cells need a different map than straights because dir encodes
+    *which two faces are open* (entry+exit), not heading direction.
+
+    Detection: only true 1×1 corner curves get the curve maps. Block IDs
+    must contain "Curve" AND end in Right/Left/In/Out. Everything else
+    (chicanes, slopes, banks, straights, branches, tilt-transitions) uses
+    the straight map. New IDs without R/L suffix fall through to straight,
+    which is fine for non-corner blocks.
     """
     rot = json_rot & 3
     if "Curve" in json_id:

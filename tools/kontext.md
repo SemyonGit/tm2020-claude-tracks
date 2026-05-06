@@ -202,12 +202,17 @@ BLOCK_MAP = {
 dir encoding → which two faces are open:
   dir=North(0) → W+N | dir=East(1) → S+W | dir=South(2) → S+E | dir=West(3) → E+N
 
-CURVE_RIGHT_DIR_MAP = (3,0,1,2): VERIFIED via silvercut 4-corner rectangle.
-  CurveRight with JSON rot = car's approach direction → result = counterclockwise turn (left from car POV).
-CURVE_LEFT_DIR_MAP  = (0,1,2,3): Theoretically correct (same block, clockwise turn from car POV).
-  Not yet tested with actual Left-curve JSON.
+All three rotation maps are now FULLY VERIFIED (analytically derived AND
+matched against all 8 curve cells in test_kurven.Map.Gbx, 2026-05-06):
+- STRAIGHT_DIR_MAP    = (2, 1, 0, 3)  — straights/slopes/start/finish/chicanes
+- CURVE_RIGHT_DIR_MAP = (3, 0, 1, 2)  — *Right and *In curves (TMNF-right turn)
+- CURVE_LEFT_DIR_MAP  = (0, 1, 2, 3)  — *Left  and *Out curves (TMNF-left turn)
 
-STRAIGHT_DIR_MAP = (2,1,0,3): JSON rot → TM2020 dir. JSON z-axis is flipped vs TM2020:
+Note: TMNF-right is geometrically a TM2020-LEFT turn (because z-axis is flipped),
+but openings calculation gives the same answer either way. silvercut's "Curve2Right"
+labels produce a counterclockwise loop in TM2020 view — that's the JSON convention.
+
+STRAIGHT_DIR_MAP rationale: JSON z-axis is flipped vs TM2020:
   rot=0("North")→TM2020 South, rot=1("East")→TM2020 East, rot=2("South")→TM2020 North, rot=3("West")→TM2020 West.
 
 ---
