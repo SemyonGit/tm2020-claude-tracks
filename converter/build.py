@@ -271,12 +271,29 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False) -> Path |
         real = resolve_block(json_id)
         is_wp = (i in cps) or is_waypoint_block(json_id)
         json_y = b["y"]
+        rot = b.get("rotation", 0)
+
+        is_down_slope = "Slope" in json_id and "Down" in json_id
+        if is_down_slope:
+            # Down slopes: the car enters at the HIGH end and exits LOW.
+            # The block origin (y) is the LOW end; HIGH end = y+1 in the dir direction.
+            # So dir must point toward HIGH = opposite of travel direction.
+            # json_y in the JSON is the entry (high) road surface → TM2020 y = json_y - 1 + Y_OFFSET.
+            raw_dir = STRAIGHT_DIR_MAP[rot & 3]
+            dir_name = DIR_NAMES[(raw_dir + 2) % 4]
+            tm2020_y = (json_y - 1) + Y_OFFSET
+            is_ground_val = (json_y - 1 == GROUND_Y_JSON)
+        else:
+            dir_name = tm2020_dir(json_id, rot)
+            tm2020_y = json_y + Y_OFFSET
+            is_ground_val = (json_y == GROUND_Y_JSON)
+
         inst = make_block(
             name=real,
-            x=b["x"], y=json_y + Y_OFFSET, z=b["z"],
-            dir_name=tm2020_dir(json_id, b.get("rotation", 0)),
+            x=b["x"], y=tm2020_y, z=b["z"],
+            dir_name=dir_name,
             is_waypoint=is_wp,
-            is_ground=(json_y == GROUND_Y_JSON),
+            is_ground=is_ground_val,
         )
         block_instances.append(inst)
 

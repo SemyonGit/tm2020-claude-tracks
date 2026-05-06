@@ -60,8 +60,9 @@ Claude Code commits: git add . && git commit -m "🏎️ ..." && git push
 | Map loads in TM2020 | ✅ Works |
 | Block names (RoadTech* prefix) | ✅ Verified |
 | Y_OFFSET=8 | ✅ Confirmed |
-| Block placement / rotations | 🔧 Being fixed |
-| Curves connecting to straights | 🔧 Being fixed |
+| Block placement / rotations | ✅ Fixed |
+| Curves connecting to straights | ✅ Fixed + verified |
+| Down slopes (dir flip + y offset) | ✅ Fixed (2026-05-06) |
 | Full block catalog | ⬜ Pending |
 | Kacky-style blocks | ⬜ Pending |
 
@@ -190,6 +191,25 @@ BLOCK_MAP = {
 - TM2020 Simple Editor = RoadTech* blocks (yellow bordered platform style)
 - TM2020 Advanced Editor = more block types, different naming
 
+## Direction / Rotation Convention (VERIFIED)
+
+**Slope blocks:** dir = direction the HIGH end faces. For dir=West: West face at TM2020_y+1, East face at TM2020_y.
+- Up slopes going West (rot=3): dir=West, TM2020_y = json_y + Y_OFFSET ✓
+- Down slopes going West (rot=3): dir=East, TM2020_y = json_y - 1 + Y_OFFSET ✓
+  (json_y = road surface at entry/high end; block origin = low end = json_y-1)
+
+**Curve blocks (both Right and Left use the same TM2020 block: RoadTechCurve1):**
+dir encoding → which two faces are open:
+  dir=North(0) → W+N | dir=East(1) → S+W | dir=South(2) → S+E | dir=West(3) → E+N
+
+CURVE_RIGHT_DIR_MAP = (3,0,1,2): VERIFIED via silvercut 4-corner rectangle.
+  CurveRight with JSON rot = car's approach direction → result = counterclockwise turn (left from car POV).
+CURVE_LEFT_DIR_MAP  = (0,1,2,3): Theoretically correct (same block, clockwise turn from car POV).
+  Not yet tested with actual Left-curve JSON.
+
+STRAIGHT_DIR_MAP = (2,1,0,3): JSON rot → TM2020 dir. JSON z-axis is flipped vs TM2020:
+  rot=0("North")→TM2020 South, rot=1("East")→TM2020 East, rot=2("South")→TM2020 North, rot=3("West")→TM2020 West.
+
 ---
 
 ## Reference Maps (for parsing)
@@ -246,9 +266,9 @@ Use this to find correct block names for Advanced Editor blocks.
 11. RoadTechStraight     x=16 y=9 z=28 dir=North
 12. RoadTechFinish       x=16 y=9 z=29 dir=North
 ```
-Key insight: Curve dir is NOT a simple rotation of driving direction.
-Each curve corner has a specific dir value. This is the key data to fix
-CURVE_RIGHT_DIR_MAP and CURVE_LEFT_DIR_MAP in build.py.
+Key insight: Curve dir encodes which two faces are open (not the travel direction).
+See "Direction / Rotation Convention" section above for the full verified mapping.
+CURVE_RIGHT_DIR_MAP = (3,0,1,2) verified correct for all 4 corners of silvercut.
 
 ---
 
@@ -263,13 +283,18 @@ CURVE_RIGHT_DIR_MAP and CURVE_LEFT_DIR_MAP in build.py.
 ---
 
 ## Next Steps (priority order)
-1. Fix block rotation/direction mapping using test_kurven ground truth
-2. Build and add reference maps: test_straights, test_slopes, test_chicanes
-3. Explore item.mania-exchange.com Advanced Editor block catalog
-4. Expand BLOCK_MAP with real Advanced Editor block names
-5. Generate first fully drivable connected track
-6. Generate first D5/5 brutal track
-7. Start working toward Kacky-style maps 🎯
+1. ✅ Fix block rotation/direction mapping — curves verified, down slopes fixed
+2. Test silvercut.Map.Gbx in TM2020: confirm hill works and track is drivable
+3. Build reference maps in TM2020 editor and add to tracks/_reference/:
+   - test_slopes.Map.Gbx (verify slope dir behavior empirically)
+   - test_straights.Map.Gbx
+   - test_chicanes.Map.Gbx
+4. Test left curves (StadiumRoadMainCurve1Left) — CURVE_LEFT_DIR_MAP not yet empirically tested
+5. Explore item.mania-exchange.com Advanced Editor block catalog
+6. Expand BLOCK_MAP with real Advanced Editor block names
+7. Generate first fully drivable connected track
+8. Generate first D5/5 brutal track
+9. Start working toward Kacky-style maps 🎯
 
 ---
 
