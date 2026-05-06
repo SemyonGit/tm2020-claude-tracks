@@ -101,16 +101,16 @@ BLOCK_MAP: dict[str, str] = {
     # Explizite X2/X3-IDs landen auf den echten Mehr-Zellen-Chicanes.
     "StadiumRoadMainChicaneRight":   "RoadTechStraight",
     "StadiumRoadMainChicaneLeft":    "RoadTechStraight",
-    "StadiumRoadMainChicaneX2Right": "RoadTechChicaneX2Right",
-    "StadiumRoadMainChicaneX2Left":  "RoadTechChicaneX2Left",
-    "StadiumRoadMainChicaneX3Right": "RoadTechChicaneX3Right",
-    "StadiumRoadMainChicaneX3Left":  "RoadTechChicaneX3Left",
+    # RoadTechChicane* not in catalog — fall back to Straight until real names found
+    "StadiumRoadMainChicaneX2Right": "RoadTechStraight",
+    "StadiumRoadMainChicaneX2Left":  "RoadTechStraight",
+    "StadiumRoadMainChicaneX3Right": "RoadTechStraight",
+    "StadiumRoadMainChicaneX3Left":  "RoadTechStraight",
 
-    # Banking — kein passendes 1-Zelle-Banking; Fallback auf Straight.
-    # Wer echtes TiltStraight (gebankter Straight) will, ID direkt nutzen.
+    # Banking — RoadTechTiltStraight not in catalog; all fall back to Straight
     "StadiumRoadMainBankRight":      "RoadTechStraight",
     "StadiumRoadMainBankLeft":       "RoadTechStraight",
-    "StadiumRoadMainTiltStraight":   "RoadTechTiltStraight",
+    "StadiumRoadMainTiltStraight":   "RoadTechStraight",
 
     # Slopes — JSON-Delta = +1 y/Zelle ⇒ SlopeBase (NICHT SlopeBase2).
     "StadiumRoadMainSlope1Up":       "RoadTechSlopeBase",
@@ -118,16 +118,16 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainSlope2Up":       "RoadTechSlopeBase",
     "StadiumRoadMainSlope2Down":     "RoadTechSlopeBase",
 
-    # Special — alle 1-Zelle-Footprint
-    "StadiumRoadMainHole":           "RoadTechHole",
-    "StadiumRoadMainPenalty":        "RoadTechPenalty",
-    "StadiumRoadMainPenaltyDirt":    "RoadTechPenaltyDirt",
-    "StadiumRoadMainPenaltyIce":     "RoadTechPenaltyIce",
+    # Special — RoadTechHole/Penalty/Narrow not in catalog; fall back to Straight
+    "StadiumRoadMainHole":           "RoadTechStraight",
+    "StadiumRoadMainPenalty":        "RoadTechStraight",
+    "StadiumRoadMainPenaltyDirt":    "RoadTechStraight",
+    "StadiumRoadMainPenaltyIce":     "RoadTechStraight",
     "StadiumRoadMainTurbo":          "RoadTechSpecialTurbo",
-    "StadiumRoadMainNarrowCenter":   "RoadTechNarrowCenter",
-    "StadiumRoadMainNarrowSide":     "RoadTechNarrowSide",
+    "StadiumRoadMainNarrowCenter":   "RoadTechStraight",
+    "StadiumRoadMainNarrowSide":     "RoadTechStraight",
 
-    # Walls — kein passendes RoadTech-Pendant; Fallback auf Straight
+    # Walls — no RoadTech wall variant in catalog; fall back to Straight
     "StadiumRoadMainWallLeft":       "RoadTechStraight",
     "StadiumRoadMainWallRight":      "RoadTechStraight",
 }
