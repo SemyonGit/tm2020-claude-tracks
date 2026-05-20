@@ -1,3 +1,5 @@
+#Ts does not work it has like 67 errors
+
 # TM2020 Claude Tracks
 
 > All tracks in this repository are designed by [Claude](https://claude.ai) (Anthropic).  
