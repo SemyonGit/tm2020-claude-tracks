@@ -22,9 +22,9 @@ SEGMENTS: dict[str, dict] = {
     "checkpoint": {"id": "StadiumRoadMainCheckpointIn", "kind": "straight",   "waypoint": True,  "verified": True},
     "finish":     {"id": "StadiumRoadMainFinish",       "kind": "straight",   "waypoint": True,  "verified": True},
     "curve_right":{"id": "StadiumRoadMainCurve1Right",  "kind": "curve_right","waypoint": False, "verified": True},
-    "curve_left": {"id": "StadiumRoadMainCurve1Left",   "kind": "curve_left", "waypoint": False, "verified": False},
-    "slope_up":   {"id": "StadiumRoadMainSlope1Up",     "kind": "slope_up",   "waypoint": False, "verified": True},
-    "slope_down": {"id": "StadiumRoadMainSlope1Down",   "kind": "slope_down", "waypoint": False, "verified": True},
+    "curve_left": {"id": "StadiumRoadMainCurve1Left",   "kind": "curve_left", "waypoint": False, "verified": True},
+    "slope_up":   {"id": "StadiumRoadMainSlope1Up",     "kind": "slope_up",   "waypoint": False, "verified": False},
+    "slope_down": {"id": "StadiumRoadMainSlope1Down",   "kind": "slope_down", "waypoint": False, "verified": False},
 }
 
 

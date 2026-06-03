@@ -12,8 +12,12 @@
   aborts on gaps/overlaps unless --force.
 
 ### Verified vs not
-- VERIFIED segments: start, straight, checkpoint, finish, curve_right, slope_up, slope_down.
-- curve_left: composer emits but warns (CURVE_LEFT_DIR_MAP still untested in-game).
+- VERIFIED segments: start, straight, checkpoint, finish, curve_right, curve_left.
+  The basic flat 1-cell vocabulary (straights + both 1×1 curves + waypoints) is now
+  fully verified in-game (2026-06-04).
+- UNVERIFIED: slope_up, slope_down. These were only ever build.py-logic-fixed
+  against old notes, never driven through the composer pipeline. Composer warns on
+  use; keep them honest until a slope test passes in-game.
 
 ### Proof
 - `compose.py proofcut.design.json` → 24 blocks, 2 CP, validator CLEAN.
@@ -24,7 +28,8 @@
 - Re-author silvercut with verified segments (or wait for multi-cell vocabulary).
 - Extract footprint+connectors for Curve2–5 / real chicanes / PlatformTech from a
   reference map (needs `every platform block.Map.Gbx` parsed) → add to blocks.py.
-- Verify curve_left in-game, then flip its `verified` flag.
+- curve_left verified in-game ✅ (flag flipped). Next: drive a slope_up/slope_down
+  track through the composer in-game, then flip the slope `verified` flags.
 
 ### Doc fixes
 - README rewritten to match reality (was: ManiaPlanet path, catalog/blocks.json as IDs).
