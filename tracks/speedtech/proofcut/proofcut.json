@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "name": "Proofcut",
+    "author": "SemyonGit",
+    "category": "speedtech",
+    "difficulty": 2,
+    "creativity": 2,
+    "generated_by": "Claude (Anthropic)",
+    "generated_at": "2026-06-03T19:24:40Z",
+    "target_at": "00:25.000",
+    "description": "Phase-1 proof: composed by connector-walk, not hand-placed. Verified blocks only."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day"
+  },
+  "blocks": [
+    {
+      "id": "StadiumRoadMainStart",
+      "x": 16,
+      "y": 1,
+      "z": 20,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 17,
+      "y": 1,
+      "z": 20,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 18,
+      "y": 1,
+      "z": 20,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 19,
+      "y": 1,
+      "z": 20,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 1,
+      "z": 20,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCurve1Right",
+      "x": 21,
+      "y": 1,
+      "z": 20,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 21,
+      "y": 1,
+      "z": 21,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 21,
+      "y": 1,
+      "z": 22,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCheckpointIn",
+      "x": 21,
+      "y": 1,
+      "z": 23,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 21,
+      "y": 1,
+      "z": 24,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 21,
+      "y": 1,
+      "z": 25,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCurve1Right",
+      "x": 21,
+      "y": 1,
+      "z": 26,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 1,
+      "z": 26,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 19,
+      "y": 1,
+      "z": 26,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 18,
+      "y": 1,
+      "z": 26,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCurve1Right",
+      "x": 17,
+      "y": 1,
+      "z": 26,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 17,
+      "y": 1,
+      "z": 25,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 17,
+      "y": 1,
+      "z": 24,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCheckpointIn",
+      "x": 17,
+      "y": 1,
+      "z": 23,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 17,
+      "y": 1,
+      "z": 22,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCurve1Right",
+      "x": 17,
+      "y": 1,
+      "z": 21,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 18,
+      "y": 1,
+      "z": 21,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 19,
+      "y": 1,
+      "z": 21,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainFinish",
+      "x": 20,
+      "y": 1,
+      "z": 21,
+      "rotation": 1,
+      "flags": 0
+    }
+  ],
+  "checkpoints": [
+    8,
+    18
+  ],
+  "sections": []
+}

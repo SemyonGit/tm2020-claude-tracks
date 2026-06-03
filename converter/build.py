@@ -372,8 +372,29 @@ CURVE_LEFT_DIR_MAP  = (0, 1, 2, 3)   # *Left  / *Out curves (TMNF-left  turn)
 
 # ─── Block construction ────────────────────────────────────────────────────────
 
+PLACEHOLDER_IDS = {
+    "StadiumRoadMainChicaneRight", "StadiumRoadMainChicaneLeft",
+    "StadiumRoadMainBankRight", "StadiumRoadMainBankLeft",
+    "StadiumRoadMainWallLeft", "StadiumRoadMainWallRight",
+    "StadiumRoadMainNarrowCenter", "StadiumRoadMainNarrowSide",
+    "StadiumRoadMainPenaltyDirt", "StadiumRoadMainPenaltyIce",
+    "StadiumRoadMainCurve2Right", "StadiumRoadMainCurve2Left",
+    "StadiumRoadMainCurve2In", "StadiumRoadMainCurve2Out",
+    "StadiumRoadMainCurve3Right", "StadiumRoadMainCurve3Left",
+    "StadiumRoadMainCurve4Right", "StadiumRoadMainCurve4Left",
+    "StadiumRoadMainCurve5Right", "StadiumRoadMainCurve5Left",
+}
+
+
 def resolve_block(json_id: str) -> str:
-    return BLOCK_MAP.get(json_id, json_id)
+    if json_id in PLACEHOLDER_IDS:
+        raise ValueError(
+            f"{json_id!r} maps to a placeholder block - built geometry "
+            f"would differ from the design. Refusing to build. Use a "
+            f"verified block or add a real, tested mapping.")
+    if json_id not in BLOCK_MAP:
+        raise ValueError(f"{json_id!r} is not in BLOCK_MAP. Refusing to guess.")
+    return BLOCK_MAP[json_id]
 
 
 def is_waypoint_block(json_id: str) -> bool:
@@ -485,12 +506,28 @@ def find_tm2020_maps_dir() -> Path | None:
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
 
-def build(json_path: Path, deploy: bool = True, dry_run: bool = False) -> Path | None:
+def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
+          force: bool = False) -> Path | None:
     track = json.loads(json_path.read_text(encoding="utf-8"))
     meta = track.get("meta", {})
     name = meta.get("name", json_path.stem)
     blocks_in = track.get("blocks", [])
     cps = set(track.get("checkpoints", []))
+
+    import sys as _sys
+    from pathlib import Path as _Path
+    _root = str(_Path(__file__).resolve().parent.parent)
+    if _root not in _sys.path:
+        _sys.path.insert(0, _root)
+    from track_lib.validator import validate as _validate
+    _problems = _validate(track)
+    if _problems:
+        print("Validator found problems:")
+        for _p in _problems:
+            print("   " + _p)
+        if not force:
+            print("   build aborted (use --force to override)")
+            sys.exit(1)
 
     print(f"🏎️  {name}  |  {meta.get('category','?')}  |  "
           f"D{meta.get('difficulty','?')}/5  C{meta.get('creativity','?')}/5")
@@ -586,6 +623,8 @@ def main() -> None:
                     help="Nicht in TM2020-Maps-Ordner kopieren")
     ap.add_argument("--batch", action="store_true",
                     help="Eingabe ist ein Ordner — alle *.json rekursiv bauen")
+    ap.add_argument("--force", action="store_true",
+                    help="Trotz Validator-Problemen bauen")
     args = ap.parse_args()
 
     target = Path(args.input)
@@ -600,7 +639,8 @@ def main() -> None:
         for f in files:
             print(f"— {f.relative_to(target)}")
             try:
-                build(f, deploy=not args.no_deploy, dry_run=args.dry_run)
+                build(f, deploy=not args.no_deploy, dry_run=args.dry_run,
+                      force=args.force)
                 ok += 1
             except SystemExit:
                 fail += 1
@@ -610,7 +650,8 @@ def main() -> None:
             print()
         print(f"━━━ Fertig: {ok} ok, {fail} fehlgeschlagen ━━━")
     else:
-        build(target, deploy=not args.no_deploy, dry_run=args.dry_run)
+        build(target, deploy=not args.no_deploy, dry_run=args.dry_run,
+              force=args.force)
 
 
 if __name__ == "__main__":

@@ -1,88 +1,67 @@
-# Ts does not work it has like 67 errors
+# 🏎️ TM2020 Claude Tracks
 
-# TM2020 Claude Tracks
+AI-designed TM2020 tracks. Claude (chat) designs at the **path level**; a
+connector-composer expands that into exact block coordinates; the converter
+writes a spielfertige `.Map.Gbx`. No block is placed by hand.
 
-> All tracks in this repository are designed by [Claude](https://claude.ai) (Anthropic).  
-> No manual block placement — pure AI design.
-
----
-
-## How It Works
+## Pipeline
 
 ```
-Claude (claude.ai)          → designs track as JSON + SVG preview
-User                        → saves JSON to tracks/{category}/{name}/
-Claude Code (this session)  → converts, commits, deploys to TM2020
+Claude chat            high-level design (segments, no coordinates)
+   ↓  design.json
+compose.py             walks connectors → exact x/y/z/dir   (track_lib/)
+   ↓  track.json       (tools/track_schema.json compliant)
+   ↓  validate()       connectivity + overlap + waypoint check
+converter/build.py     track.json → .Map.Gbx                (gbx-py)
+   ↓
+TM2020 Maps folder  +  git commit
 ```
 
-1. User commissions a track (style, difficulty, creativity, category)
-2. Claude (Web) designs the layout and generates `.json` + optional SVG preview
-3. User saves the JSON to the correct folder
-4. Claude Code converts → `.Map.Gbx`, commits to GitHub, deploys to TM2020
+Two independent safety nets:
+- **composer** makes coordinates correct by construction (no hand-walked grid math).
+- **build.py fail-loud**: any block id without a real, verified mapping aborts the
+  build instead of silently substituting a straight. (This is what corrupted
+  ~half of the first track, `silvercut`.)
 
----
+## Authoring a track (design level)
 
-## Track Categories
-
-| Folder | Style | Description |
-|--------|-------|-------------|
-| `speedtech` | Precision | Tight lines, banking, chicanes |
-| `fullspeed` | Full throttle | No braking, pure flow |
-| `tech` | Technical | Complex blocks, maximum control |
-| `dirt` | Off-road | Gravel, drifts, terrain |
-| `rally` | Rally | Long curves, hills, nature |
-| `stunts` | Stunt | Loops, wall-rides, jumps |
-| `ice` | Ice | Slippery surface, no grip |
-| `fun` | Fun | Varied, accessible to all |
-| `lol` | LOL | Chaotic, absurd, surprising |
-| `beginner` | Beginner | Wide, forgiving, educational |
-
----
-
-## Difficulty Scale
-
-| Level | Label | Audience |
-|-------|-------|----------|
-| 1 | Beginner | First laps |
-| 2 | Medium | Casual players |
-| 3 | Hard | Experienced drivers |
-| 4 | Expert | Competitive |
-| 5 | Brutal | Top 1% |
-
----
-
-## Setup
-
-```powershell
-git clone https://github.com/SemyonGit/tm2020-claude-tracks
-cd tm2020-claude-tracks
-py -3.12 -m pip install -r converter/requirements.txt
+```json
+{
+  "meta": {"name": "Proofcut", "category": "speedtech", "difficulty": 2},
+  "settings": {"environment": "Stadium", "mood": "Day"},
+  "origin": {"x": 16, "y": 1, "z": 20, "heading": 1},
+  "path": [
+    {"seg": "start"}, {"seg": "straight", "count": 4}, {"seg": "curve_right"},
+    {"seg": "checkpoint"}, {"seg": "curve_right"}, {"seg": "finish"}
+  ]
+}
 ```
 
-See [converter/setup.md](converter/setup.md) for full setup including the required template map.
-
----
-
-## File Structure Per Track
-
 ```
-tracks/speedtech/silvercut/
-├── silvercut.json           ← Claude (Web) output — block data
-├── silvercut.Map.Gbx        ← Built by Claude Code — ready to play
-└── silvercut_preview.svg    ← Layout preview (optional)
+py -3.12 compose.py design.json track.json
+py -3.12 converter/build.py track.json
 ```
 
----
+## Verified segment vocabulary
 
-## Tools
+`start, straight, checkpoint, finish, curve_right, slope_up, slope_down`
+(all verified against a real map). `curve_left` exists but is **unverified** —
+the composer warns when used. Multi-cell blocks (Curve2–5, real chicanes,
+PlatformTech for Kacky) are NOT yet in the vocabulary: they need footprint +
+connector data extracted from a reference map first.
 
-| File | Purpose |
-|------|---------|
-| `converter/build.py` | JSON → .Map.Gbx converter |
-| `converter/setup.md` | Setup instructions |
-| `tools/track_schema.json` | JSON schema for all track files |
-| `tools/claude_code_agent.md` | Claude Code instructions and role definition |
+## Layout
 
----
-
-*Generated with Claude · Anthropic · [claude.ai](https://claude.ai)*
+```
+track_lib/          design-side layer
+  blocks.py         segment metadata: footprint + cursor advance
+  composer.py       design → connected schema JSON
+  validator.py      connectivity / overlap / waypoint checks
+compose.py          CLI: design.json → track.json (+validate)
+converter/
+  build.py          track.json → .Map.Gbx (fail-loud block resolution)
+  gbxpy/            vendored gbx-py (schadocalex)
+  template.Map.Gbx
+tools/track_schema.json
+tracks/{category}/{name}/
+```

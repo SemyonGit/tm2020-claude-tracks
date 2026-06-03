@@ -1,0 +1,14 @@
+{
+  "meta": {"name": "Proofcut", "author": "SemyonGit", "category": "speedtech",
+           "difficulty": 2, "creativity": 2, "target_at": "00:25.000",
+           "description": "Phase-1 proof: composed by connector-walk, not hand-placed. Verified blocks only."},
+  "settings": {"environment": "Stadium", "mood": "Day"},
+  "origin": {"x": 16, "y": 1, "z": 20, "heading": 1},
+  "path": [
+    {"seg": "start"}, {"seg": "straight", "count": 4}, {"seg": "curve_right"},
+    {"seg": "straight", "count": 2}, {"seg": "checkpoint"}, {"seg": "straight", "count": 2},
+    {"seg": "curve_right"}, {"seg": "straight", "count": 3}, {"seg": "curve_right"},
+    {"seg": "straight", "count": 2}, {"seg": "checkpoint"}, {"seg": "straight"},
+    {"seg": "curve_right"}, {"seg": "straight", "count": 2}, {"seg": "finish"}
+  ]
+}

@@ -1,3 +1,38 @@
+## 2026-06-01 — Connector layer added, converter made fail-loud
+
+### What changed
+- New `track_lib/` (blocks, composer, validator) + root `compose.py`.
+- Authoring moved from hand-placed absolute coords → high-level segment path.
+  Composer walks connectors and emits exact x/y/z/dir. Root cause of the old
+  positioning/rotation bugs (Claude doing grid math by hand) is gone.
+- `build.py resolve_block` is now fail-loud: PLACEHOLDER_IDS (chicane, bank,
+  wall, narrow, penalty-dirt/ice, Curve2–5) raise instead of silently mapping
+  to a straight/Curve1. Unknown ids raise instead of identity fallback.
+- `build.py build()` runs `track_lib.validator.validate()` before writing;
+  aborts on gaps/overlaps unless --force.
+
+### Verified vs not
+- VERIFIED segments: start, straight, checkpoint, finish, curve_right, slope_up, slope_down.
+- curve_left: composer emits but warns (CURVE_LEFT_DIR_MAP still untested in-game).
+
+### Proof
+- `compose.py proofcut.design.json` → 24 blocks, 2 CP, validator CLEAN.
+- `build.py proofcut.json --dry-run` → all real RoadTech* blocks, dirs mapped, 4 waypoints.
+- `build.py silvercut.json` now correctly REFUSES (BankRight is a placeholder).
+
+### Next
+- Re-author silvercut with verified segments (or wait for multi-cell vocabulary).
+- Extract footprint+connectors for Curve2–5 / real chicanes / PlatformTech from a
+  reference map (needs `every platform block.Map.Gbx` parsed) → add to blocks.py.
+- Verify curve_left in-game, then flip its `verified` flag.
+
+### Doc fixes
+- README rewritten to match reality (was: ManiaPlanet path, catalog/blocks.json as IDs).
+- Note: catalog DOES contain RoadTechChicaneX2/X3 + Curve2–5 images (earlier
+  kontext claim "no chicane block exists" was wrong).
+
+---
+
 # TM2020 Claude Tracks – Project Context
 *Single source of truth. Updated after every session. Read this first.*
 
@@ -261,9 +296,12 @@ Key groups confirmed in catalog:
 - `TrackWall*` – Straight, Curve1-4, SlopeBase/2, DeadendRound
 - `DecoWall*` – Base, Curve1-4, SlopeBase, LoopStart/End
 
-NOT in catalog (wrong names – now fall back to RoadTechStraight in build.py):
-- RoadTechChicane* (no chicane block exists in RoadTech surface)
-- RoadTechHole, RoadTechPenalty*, RoadTechNarrow*, RoadTechTiltStraight
+Chicanes DO exist: the catalog contains RoadTechChicaneX2/X3 (Left/Right) and
+Curve2–5; build.py maps the explicit X2/X3 ids to those real blocks.
+
+Placeholder ids (plain Chicane{Left,Right}, Bank*, Wall*, Narrow*,
+PenaltyDirt/Ice, Curve2–5{Right,Left}) are now FAIL-LOUD in build.py: they
+raise a ValueError instead of silently substituting a straight/Curve1.
 
 Map viewer (no TM2020 needed): https://gbx.bigbang1112.cz/tool/map-viewer-engine
 Upload any .Map.Gbx to view 3D layout in browser.
