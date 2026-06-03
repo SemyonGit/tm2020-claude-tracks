@@ -99,6 +99,9 @@ Claude Code commits: git add . && git commit -m "🏎️ ..." && git push
 | Curves connecting to straights | ✅ Fixed + verified |
 | Down slopes (dir flip + y offset) | ✅ Fixed (2026-05-06) |
 | Full block catalog | ✅ 120 blocks verified (catalog/blocks.json) |
+| Connector composer (track_lib/) | ✅ Added (design path → connected JSON) |
+| Pre-build validator (gaps/overlaps/waypoints) | ✅ Added (aborts unless --force) |
+| Fail-loud block resolution | ✅ Placeholders/unknowns raise (no silent substitution) |
 | Kacky-style blocks | ⬜ Pending |
 
 ---
@@ -192,29 +195,17 @@ tm2020-claude-tracks/
 ---
 
 ## Current BLOCK_MAP (converter/build.py)
-```python
-BLOCK_MAP = {
-    "StadiumRoadMainStraight":      "RoadTechStraight",
-    "StadiumRoadMainStart":         "RoadTechStart",
-    "StadiumRoadMainFinish":        "RoadTechFinish",
-    "StadiumRoadMainCheckpointIn":  "RoadTechCheckpoint",
-    "StadiumRoadMainCurve1Right":   "RoadTechCurve1",
-    "StadiumRoadMainCurve1Left":    "RoadTechCurve1",
-    "StadiumRoadMainCurve2Right":   "RoadTechCurve2",
-    "StadiumRoadMainCurve2Left":    "RoadTechCurve2",
-    "StadiumRoadMainCurve3Right":   "RoadTechCurve3",
-    "StadiumRoadMainCurve3Left":    "RoadTechCurve3",
-    "StadiumRoadMainChicaneRight":  "RoadTechCurve1",   # placeholder
-    "StadiumRoadMainChicaneLeft":   "RoadTechCurve1",   # placeholder
-    "StadiumRoadMainBankRight":     "RoadTechStraight",  # placeholder
-    "StadiumRoadMainBankLeft":      "RoadTechStraight",  # placeholder
-    "StadiumRoadMainSlope2Up":      "RoadTechSlopeBase2",
-    "StadiumRoadMainSlope2Down":    "RoadTechSlopeBase2",
-    "StadiumRoadMainWallLeft":      "RoadTechStraight",  # placeholder
-    "StadiumRoadMainWallRight":     "RoadTechStraight",  # placeholder
-    "StadiumRoadMainTurbo":         "RoadTechSpecialTurbo",
-}
-```
+The full map (~260 ids → real RoadTech* names) now lives in `converter/build.py`
+as the single source of truth — too large to mirror here. Key behavior change:
+
+`resolve_block` is FAIL-LOUD. It no longer silently substitutes a straight/Curve1
+for ids whose geometry is not really mapped. Instead:
+- ids in `PLACEHOLDER_IDS` (plain Chicane{Left,Right}, Bank*, Wall*, Narrow*,
+  PenaltyDirt/Ice, Curve2–5{Right,Left}) → raise ValueError.
+- any id not in BLOCK_MAP → raise ValueError ("Refusing to guess").
+
+Real multi-cell geometry IS mapped for the explicit ChicaneX2/X3 and Curve2–5
+(plain "Curve2/3/4/5") ids. Use those when you want true multi-cell blocks.
 
 ---
 
