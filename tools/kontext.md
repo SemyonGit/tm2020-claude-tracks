@@ -241,6 +241,11 @@ labels produce a counterclockwise loop in TM2020 view — that's the JSON conven
 STRAIGHT_DIR_MAP rationale: JSON z-axis is flipped vs TM2020:
   rot=0("North")→TM2020 South, rot=1("East")→TM2020 East, rot=2("South")→TM2020 North, rot=3("West")→TM2020 West.
 
+**Waypoint facing (2026-06-03):** In `tm2020_dir()`, Start and Finish are flipped
+180° relative to a straight at the same rotation: dir = (STRAIGHT_DIR_MAP[rot]+2)%4.
+Checkpoint stays unflipped (= STRAIGHT_DIR_MAP[rot]). Start/Finish gates face the
+opposite way from a straight so the car spawns/finishes pointing down the track.
+
 ---
 
 ## Reference Maps (for parsing)

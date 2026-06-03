@@ -422,7 +422,10 @@ def tm2020_dir(json_id: str, json_rot: int) -> str:
     rot = json_rot & 3
     # 1. Waypoints face the driving direction (same as a straight at this rot).
     if is_waypoint_block(json_id):
-        return DIR_NAMES[STRAIGHT_DIR_MAP[rot]]
+        base = STRAIGHT_DIR_MAP[rot]
+        if "Start" in json_id or "Finish" in json_id:
+            return DIR_NAMES[(base + 2) % 4]
+        return DIR_NAMES[base]
     # 2. True corner curves: pick the curve map by Right/Left/In/Out suffix.
     if "Curve" in json_id:
         if json_id.endswith("Right") or json_id.endswith("In"):
