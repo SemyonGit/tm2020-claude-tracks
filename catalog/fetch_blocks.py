@@ -1,63 +1,82 @@
-import urllib.request, os, time, json
+"""Rebuild image indexes locally; optionally download an explicit list of names."""
+import argparse
+import json
+from pathlib import Path
+import re
+import sys
+import urllib.error
+import urllib.request
+
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT.parent))
+from track_lib.files import atomic_write
 
 BASE = 'https://images.mania-exchange.com/ix/originalblocks/5/'
-OUT = 'catalog/block_images'
-os.makedirs(OUT, exist_ok=True)
+PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 
-surfaces = ['Road', 'Platform', 'Track', 'Stadium', 'Deco']
-types    = ['Tech', 'Bump', 'Dirt', 'Ice', 'Rally', 'Grass',
-            'Wall', 'Circuit', 'Pillar', 'Special']
-variants = [
-    'Base','Straight','Start','Finish','StartFinish','Checkpoint',
-    'Curve1','Curve2','Curve3','Curve4',
-    'Curve1In','Curve1Out','Curve2In','Curve2Out',
-    'SlopeBase','SlopeBase2','SlopeBase3',
-    'Slope1','Slope2','Slope3',
-    'ChicaneLeft','ChicaneRight',
-    'BankLeft','BankRight','FWTilt',
-    'WallLeft','WallRight',
-    'SpecialTurbo','SpecialBoost','SpecialBoost2','SpecialSlowmo',
-    'Loop','LoopEnd','LoopStart',
-    'DiagLeft','DiagRight',
-    'Pillar','StraightPillar','Curve1Pillar','Curve2Pillar',
-    'DeadendRound','DeadendRoundPillar',
-    'GTCurve2','GTCurve3','GTCurve4',
-]
-known = [
-    'RoadTechStart','RoadTechFinish','RoadTechStraight','RoadTechCheckpoint',
-    'RoadTechCurve1','RoadTechCurve2','RoadTechCurve3',
-    'RoadTechSlopeBase','RoadTechSlopeBase2','RoadTechSpecialTurbo',
-    'RoadBumpStart','RoadBumpFinish','RoadBumpCheckpoint','RoadBumpStraight',
-    'RoadBumpCurve1','RoadBumpCurve2','RoadBumpSlopeBase','RoadBumpSlopeBase2',
-    'RoadBumpSpecialTurbo','PlatformTechBase',
-    'TrackWallStraightPillar','TrackWallCurve1Pillar','TrackWallCurve2Pillar',
-    'TrackWallDeadendRoundPillar','StadiumCircuitBase','StadiumRoadMain',
-]
-candidates = set(known)
-for s in surfaces:
-    for t in types:
-        for v in variants:
-            candidates.add(f'{s}{t}{v}')
-        candidates.add(f'{s}{t}')
 
-found = []
-total = len(candidates)
-print(f'Probing {total} candidate names...')
-for i, name in enumerate(sorted(candidates)):
-    url = BASE + name + '.png'
+def indexes(image_dir: Path):
+    names = []
+    # Path ordering is case-insensitive on Windows. Sort the literal names so
+    # mixed-case suffixes (e.g. Base2x1/Left) have the same order on every OS.
+    for path in sorted(image_dir.glob('*.png'), key=lambda p: p.name):
+        if not path.read_bytes().startswith(PNG_SIGNATURE):
+            raise ValueError(f'not a PNG image: {path}')
+        names.append(path.stem)
+    if not names:
+        raise ValueError('no local block images; refusing to overwrite the catalog with an empty list')
+    grouped = {}
+    for name in names:
+        group = next((p for p in ('RoadTech', 'TrackWall') if name.startswith(p)), 'Other')
+        grouped.setdefault(group, []).append(name)
+    return names, grouped
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true', help='check indexes without changing files')
+    parser.add_argument('--download', action='store_true', help='download only explicitly listed candidates')
+    parser.add_argument('--names-file', type=Path, help='JSON array of candidate block names')
+    args = parser.parse_args(argv)
     try:
-        req = urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
-        r = urllib.request.urlopen(req, timeout=5)
-        if r.status == 200:
-            data = r.read()
-            with open(f'{OUT}/{name}.png','wb') as f:
-                f.write(data)
-            found.append(name)
-            print(f'✅ {name}')
-        time.sleep(0.05)
-    except Exception as e:
-        pass
+        if args.download:
+            if args.check or args.names_file is None:
+                raise ValueError('--download requires --names-file and cannot be combined with --check')
+            names = json.loads(args.names_file.read_text(encoding='utf-8'))
+            if not isinstance(names, list) or not names or any(not isinstance(n, str) or not re.fullmatch(r'[A-Za-z0-9_]+', n) for n in names):
+                raise ValueError('names file must be a nonempty array of alphanumeric block names')
+            for name in sorted(set(names)):
+                path = ROOT / 'block_images' / f'{name}.png'
+                if path.exists():
+                    continue
+                try:
+                    request = urllib.request.Request(BASE + name + '.png', headers={'User-Agent': 'tm2020-claude-tracks/catalog'})
+                    with urllib.request.urlopen(request, timeout=15) as response:
+                        data = response.read()
+                except urllib.error.HTTPError as exc:
+                    if exc.code == 404:
+                        print(f'No image: {name}')
+                        continue
+                    raise
+                if not data.startswith(PNG_SIGNATURE):
+                    raise ValueError(f'server did not return a PNG for {name}')
+                atomic_write(path, data)
+        elif args.names_file is not None:
+            raise ValueError('--names-file requires --download')
+        names, grouped = indexes(ROOT / 'block_images')
+        for filename, value in (('blocks.json', names), ('blocks_grouped.json', grouped)):
+            path = ROOT / filename
+            if args.check:
+                if not path.exists() or json.loads(path.read_text(encoding='utf-8')) != value:
+                    raise ValueError(f'outdated catalog: {path}; run without --check to rebuild')
+            else:
+                atomic_write(path, (json.dumps(value, indent=2) + '\n').encode('utf-8'))
+        print(f'{len(names)} image-backed names; geometry support is defined separately in track_lib/blocks.py')
+        return 0
+    except (OSError, ValueError) as exc:
+        print(f'ERROR: {exc}', file=sys.stderr)
+        return 1
 
-with open('catalog/blocks.json','w') as f:
-    json.dump(sorted(found), f, indent=2)
-print(f'\nFound {len(found)} blocks → catalog/blocks.json')
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -1,365 +1,95 @@
-## 2026-06-01 — Connector layer added, converter made fail-loud
+# Projektkontext: TM2020 Claude Tracks
 
-### What changed
-- New `track_lib/` (blocks, composer, validator) + root `compose.py`.
-- Authoring moved from hand-placed absolute coords → high-level segment path.
-  Composer walks connectors and emits exact x/y/z/dir. Root cause of the old
-  positioning/rotation bugs (Claude doing grid math by hand) is gone.
-- `build.py resolve_block` is now fail-loud: PLACEHOLDER_IDS (chicane, bank,
-  wall, narrow, penalty-dirt/ice, Curve2–5) raise instead of silently mapping
-  to a straight/Curve1. Unknown ids raise instead of identity fallback.
-- `build.py build()` runs `track_lib.validator.validate()` before writing;
-  aborts on gaps/overlaps unless --force.
+Aktualisiert: 14. September 2026. Diese Datei beschreibt den aktuellen Stand.
+Ausführliche Befunde: [PROJECT_REVIEW.md](PROJECT_REVIEW.md).
+Nächste praktische Arbeit: [NEXT_STEPS.md](NEXT_STEPS.md).
 
-### Verified vs not
-- VERIFIED segments: start, straight, checkpoint, finish, curve_right, curve_left.
-  The basic flat 1-cell vocabulary (straights + both 1×1 curves + waypoints) is now
-  fully verified in-game (2026-06-04).
-- UNVERIFIED: slope_up, slope_down. These were only ever build.py-logic-fixed
-  against old notes, never driven through the composer pipeline. Composer warns on
-  use; keep them honest until a slope test passes in-game.
+## Ziel und Arbeitsweise
 
-### Proof
-- `compose.py proofcut.design.json` → 24 blocks, 2 CP, validator CLEAN.
-- `build.py proofcut.json --dry-run` → all real RoadTech* blocks, dirs mapped, 4 waypoints.
-- `build.py silvercut.json` now correctly REFUSES (BankRight is a placeholder).
+SemyonGit möchte mit KI Trackmania-2020-Strecken bis hin zu einer Kacky-Map
+entwerfen. Entwurf und technische Umsetzung können von Claude oder einem
+anderen Assistenten stammen. `meta.generated_by` nennt den tatsächlichen
+Generator. Semyon prüft Maps im Spiel und liefert Referenzen für neue Geometrie.
 
-### Next
-- Re-author silvercut with verified segments (or wait for multi-cell vocabulary).
-- Extract footprint+connectors for Curve2–5 / real chicanes / PlatformTech from a
-  reference map (needs `every platform block.Map.Gbx` parsed) → add to blocks.py.
-- curve_left verified in-game ✅ (flag flipped). Next: drive a slope_up/slope_down
-  track through the composer in-game, then flip the slope `verified` flags.
+Quelle: `SemyonGit/tm2020-claude-tracks`, Basis dieser Überarbeitung:
+`13d1dbe7d5d28238360f0d8a2fe931261eb3918c` vom 3. Juni 2026 UTC
+(4. Juni in der Schweiz). Es gab zu Beginn nur `main`, keine PRs, Issues oder
+CI-Läufe. Frühere Claude-Chats lagen nicht vor; Grundlage waren Repository und
+Commit-Verlauf.
 
-### Doc fixes
-- README rewritten to match reality (was: ManiaPlanet path, catalog/blocks.json as IDs).
-- Note: catalog DOES contain RoadTechChicaneX2/X3 + Curve2–5 images (earlier
-  kontext claim "no chicane block exists" was wrong).
+## Aktuelle Pipeline
 
----
+1. High-Level-Design nach `tools/design_schema.json` erstellen.
+2. `compose.py` berechnet ein `track.json` und prüft dessen Geometrie.
+3. `converter/build.py` validiert erneut, schreibt GBX mit eigenem Namen/UID und
+   liest die Ausgabe zur Kontrolle ein.
+4. Map im aktuellen Spielstand öffnen, speichern, fahren und validieren.
+5. Befunde und Änderungen in diesem Kontext dokumentieren.
 
-# TM2020 Claude Tracks – Project Context
-*Single source of truth. Updated after every session. Read this first.*
+Python 3.12; Requirements in `converter/requirements.txt` bzw.
+`requirements-dev.txt`. Windows: `.\.venv\Scripts\python.exe` und
+`$env:PYTHONIOENCODING = "utf-8"`; Linux: `.venv/bin/python`.
 
----
+## Was belegt ist
 
-## Long-Term Goal 🎯
-**Generate a Kacky-style map with Claude.**
-Kacky = brutally hard, precision-based, one wrong move = restart.
-Intentional AI design (not random) is our advantage over neural networks.
+| Bereich | Stand |
+|---|---|
+| Flache Einzelzellen | Start, Gerade, Checkpoint, Finish, Rechts- und Linkskurve; laut Juni-Protokoll im Spiel geprüft |
+| Steigungen | `slope_up` und `slope_down` weiterhin experimentell; vier neue Kalibrierungsmaps |
+| Dateipipeline | Schema, Rotation, Anschlüsse, Platzgrenzen, Belegung und Waypoints werden geprüft; GBX-Roundtrip |
+| Katalog | 191 Bildnamen: 190 RoadTech, 1 TrackWall; kein vollständiger Advanced-Editor-Katalog |
+| Mapping | 216 historische Alias-Einträge in `converter/build.py`; akzeptierte Geometrie ausschliesslich in `track_lib/blocks.py` |
+| Testmaterial | Proofcut plus Flat-Turns und vier Steigungstests; aktuelle Spielprüfung noch offen |
+| Alte Entwürfe | Silvercut und Razorline ungültig; unverändert als Historie erhalten |
+| Grössere Blöcke/Kacky | Anschluss- und Platzbedarf noch nicht modelliert |
 
-Milestone path:
-- ✅ Pipeline works (JSON → .Map.Gbx loads in TM2020)
-- 🔧 Block placement correct (currently fixing)
-- ⬜ Full block catalog mapped (Advanced Editor blocks)
-- ⬜ First fully connected drivable track
-- ⬜ First brutal track (D5/5)
-- ⬜ Kacky map
+## Koordinaten und Orientierung
 
----
+JSON-Fahrtrichtung: 0=N=-z, 1=E=+x, 2=S=+z, 3=W=-x.
+Raster der Vorlage: x=48, y=40, z=48. JSON-y=1 ist GBX-y=9 (Offset +8).
+Das ist kein direkter Gleichlauf zwischen JSON-Heading und GBX-`dir`.
 
-## GitHub Repo
-https://github.com/SemyonGit/tm2020-claude-tracks
-Local: C:\Users\semyo\Documents\tm2020-claude-tracks
+- Gerade und Checkpoint: `(2, 1, 0, 3)`.
+- Start/Finish: dazu 180 Grad; Korrektur aus Juni bleibt erhalten.
+- Rechtskurve: `(3, 0, 1, 2)`.
+- Linkskurve: `(0, 1, 2, 3)`.
+- Abfahrt: provisorisch um 180 Grad gedreht; Ursprung eine y-Einheit unter dem
+  Eingang. Noch kein neuer Fahrtest.
 
----
+## Änderungen dieser Überarbeitung
 
-## Roles
-| Who | Does what |
-|-----|-----------|
-| **Claude Chat** (claude.ai) | Creative track design, JSON generation, SVG preview, long-term vision |
-| **Claude Code** (VSCode/Codespaces, Opus 4.7) | Convert, fix bugs, parse maps, commit, deploy – never designs tracks |
-| **User** | Saves JSON from chat to correct folder, reviews in TM2020, provides reference maps |
+- Echte Schema-Prüfung; eigenes Design-Schema; ungültige Counts und Headings
+  werden abgewiesen. Generator-Metadaten sind nicht mehr auf Claude festgelegt.
+- Validator prüft jede Blockrotation, Start am Anfang, Finish am Ende, echte
+  Checkpoint-Indizes, Gridgrenzen, Sections und implementierte Flags.
+- Unbekannte Geometrie wird nicht mehr als Gerade behandelt. `--force` umgeht
+  keine Fehler. `--allow-unverified` ist nur für die zwei modellierten Steigungen.
+- `Checkpoint` baut einen echten `RoadTechCheckpoint`.
+- GBX-Name/UID in Body, Header und XML synchron; UID stabil je benanntem Layout;
+  zugehöriger CRC wird angepasst. Echter Template-Account-Autor bleibt erhalten.
+- Lokaler Parser-Patch: eingebettete ZIP-Puffer gehören jeweils zu ihrer Map.
+- Batch überspringt Designs, liefert Fehlerstatus und erkennt kollidierende
+  Ausgabenamen. Expliziter Maps-Ordner und Ausgabeordner sind möglich.
+- Katalog wird aus vorhandenen PNGs reproduziert. Downloads nur noch über
+  explizite Namenslisten; Netzwerkfehler ersetzen den Katalog nicht durch Leerlisten.
+- Fünf neue Testmaps, Referenz-Export, 74 Regressionstests und Linux-/Windows-CI
+  ergänzt. Der erste Windows-Lauf fand eine abweichende Katalogsortierung;
+  Dateinamen werden jetzt explizit und plattformunabhängig sortiert. Die
+  GitHub-Actions verwenden die Node-24-basierte v6.
 
-Claude Chat and Claude Code are separate sessions – kontext.md is the bridge.
+## Noch offen
 
----
+Die aktuelle Überarbeitung konnte Trackmania nicht ausführen. Fahrbarkeit,
+Checkpoint-Respawn, Author Time und neue In-game-Validierung sind offen.
+Thumbnail und einige Editorinformationen stammen weiterhin aus der Vorlage.
+Die vorhandene Zellprüfung bewertet weder Fahrphysik noch beliebige Mehrzellen-
+Blöcke, Dekoration oder absichtliche Sprünge.
 
-## Pipeline
-```
-Claude Chat (claude.ai)
-    ↓  designs track → generates JSON + SVG preview
-User saves JSON to tracks/{category}/{name}/{name}.json
-    ↓
-Claude Code runs:
-    PYTHONIOENCODING=utf-8 py -3.12 converter/build.py tracks/{category}/{name}/{name}.json
-    ↓
-.Map.Gbx → auto-copied to C:\Users\semyo\Documents\Trackmania\Maps\My Maps\
-    ↓
-User opens TM2020 and plays
-    ↓
-Claude Code commits: git add . && git commit -m "🏎️ ..." && git push
-```
+Im Juni erwähnte Referenzmaps sind **nicht eingecheckt**. Alte lokale Pfade:
+`C:/Users/semyo/Documents/Trackmania/Maps/My Maps/` und
+`C:/Users/semyo/Documents/Trackmania/Maps/Downloaded/`.
+Vor einer Verwendung müssen die jeweiligen Dateien tatsächlich vorliegen.
 
----
-
-## Current Pipeline Status
-| Component | Status |
-|-----------|--------|
-| JSON → .Map.Gbx (file created) | ✅ Works |
-| Map loads in TM2020 | ✅ Works |
-| Block names (RoadTech* prefix) | ✅ Verified |
-| Y_OFFSET=8 | ✅ Confirmed |
-| Block placement / rotations | ✅ Fixed |
-| Curves connecting to straights | ✅ Fixed + verified |
-| Down slopes (dir flip + y offset) | ✅ Fixed (2026-05-06) |
-| Full block catalog | ✅ 120 blocks verified (catalog/blocks.json) |
-| Connector composer (track_lib/) | ✅ Added (design path → connected JSON) |
-| Pre-build validator (gaps/overlaps/waypoints) | ✅ Added (aborts unless --force) |
-| Fail-loud block resolution | ✅ Placeholders/unknowns raise (no silent substitution) |
-| Kacky-style blocks | ⬜ Pending |
-
----
-
-## Tech Stack
-- **Python 3.12** – always use `py -3.12`
-- **gbx-py** vendored in `converter/gbxpy/` (schadocalex/gbx-py)
-- **construct** – `pip install construct`
-- **Always prefix PowerShell with:** `$env:PYTHONIOENCODING = "utf-8"`
-- **Claude Code:** `claude --dangerously-skip-permissions --model claude-opus-4-7 --max-turns 30`
-
----
-
-## Folder Structure
-```
-tm2020-claude-tracks/
-├── CLAUDE.md
-├── README.md
-├── converter/
-│   ├── build.py                  ← Main converter (JSON → .Map.Gbx)
-│   ├── gbxpy/                    ← Vendored gbx-py
-│   ├── template.Map.Gbx          ← Empty TM2020 map (base for writing)
-│   └── setup.md
-├── tools/
-│   ├── track_schema.json         ← JSON schema for all tracks
-│   ├── kontext.md                ← THIS FILE
-│   ├── claude_code_agent.md
-│   └── Pictures/                 ← Visual references (editor screenshots)
-└── tracks/
-    ├── _reference/               ← Real TM2020 maps for parsing/analysis
-    │   ├── test_kurven.Map.Gbx        ← User-built curve reference ✅
-    │   ├── test_straights.Map.Gbx     ⬜ TODO: build and add
-    │   ├── test_slopes.Map.Gbx        ⬜ TODO: build and add
-    │   └── test_chicanes.Map.Gbx      ⬜ TODO: build and add
-    ├── speedtech/silvercut/      ← First generated track
-    ├── fullspeed/
-    ├── dirt/
-    ├── rally/
-    ├── stunts/
-    ├── fun/
-    ├── lol/
-    ├── beginner/
-    ├── tech/
-    └── ice/
-```
-
----
-
-## Track Categories
-| Folder | Style | Difficulty range |
-|--------|-------|-----------------|
-| speedtech | Precision, banked curves, chicanes | 1–5 |
-| fullspeed | No braking, flow | 1–5 |
-| tech | Complex blocks, max control | 1–5 |
-| dirt | Offroad, drifts | 1–5 |
-| rally | Long curves, hills | 1–5 |
-| stunts | Loops, wall-rides, jumps | 1–5 |
-| ice | No grip, sliding | 1–5 |
-| fun | Mixed, for everyone | 1–3 |
-| lol | Chaotic, absurd | 1–3 |
-| beginner | Wide, forgiving | 1–2 |
-
----
-
-## JSON Schema (track.json)
-```json
-{
-  "meta": {
-    "name": "Silvercut",
-    "author": "SemyonGit",
-    "category": "speedtech",
-    "difficulty": 3,
-    "creativity": 3,
-    "target_at": "00:55.000",
-    "generated_by": "Claude (Anthropic)",
-    "generated_at": "2026-05-05T00:00:00Z"
-  },
-  "settings": { "environment": "Stadium", "mood": "Day" },
-  "blocks": [
-    { "id": "StadiumRoadMainStart", "x": 10, "y": 1, "z": 20, "rotation": 0 }
-  ],
-  "checkpoints": [5, 12, 20],
-  "sections": [
-    { "name": "Launch", "description": "...", "block_range": [0, 5], "trap": "..." }
-  ]
-}
-```
-
-**JSON rotation convention:** 0=North, 1=East, 2=South, 3=West (matches TM2020 dir)
-
----
-
-## Current BLOCK_MAP (converter/build.py)
-The full map (~260 ids → real RoadTech* names) now lives in `converter/build.py`
-as the single source of truth — too large to mirror here. Key behavior change:
-
-`resolve_block` is FAIL-LOUD. It no longer silently substitutes a straight/Curve1
-for ids whose geometry is not really mapped. Instead:
-- ids in `PLACEHOLDER_IDS` (plain Chicane{Left,Right}, Bank*, Wall*, Narrow*,
-  PenaltyDirt/Ice, Curve2–5{Right,Left}) → raise ValueError.
-- any id not in BLOCK_MAP → raise ValueError ("Refusing to guess").
-
-Real multi-cell geometry IS mapped for the explicit ChicaneX2/X3 and Curve2–5
-(plain "Curve2/3/4/5") ids. Use those when you want true multi-cell blocks.
-
----
-
-## Known Technical Details
-- gbx-py is vendored (pip package only delivers LZO binding, not parser)
-- Chunks 0x03043062, 0x03043068, 0x03043069 dropped before write (block-count dependent)
-- `$env:PYTHONIOENCODING = "utf-8"` always needed on Windows (emoji in print)
-- template.Map.Gbx: ground blocks at y=9 → Y_OFFSET=8 (json y=1 + 8 = 9)
-- TM2020 Simple Editor = RoadTech* blocks (yellow bordered platform style)
-- TM2020 Advanced Editor = more block types, different naming
-
-## Direction / Rotation Convention (VERIFIED)
-
-**Slope blocks:** dir = direction the HIGH end faces. For dir=West: West face at TM2020_y+1, East face at TM2020_y.
-- Up slopes going West (rot=3): dir=West, TM2020_y = json_y + Y_OFFSET ✓
-- Down slopes going West (rot=3): dir=East, TM2020_y = json_y - 1 + Y_OFFSET ✓
-  (json_y = road surface at entry/high end; block origin = low end = json_y-1)
-
-**Curve blocks (both Right and Left use the same TM2020 block: RoadTechCurve1):**
-dir encoding → which two faces are open:
-  dir=North(0) → W+N | dir=East(1) → S+W | dir=South(2) → S+E | dir=West(3) → E+N
-
-All three rotation maps are now FULLY VERIFIED (analytically derived AND
-matched against all 8 curve cells in test_kurven.Map.Gbx, 2026-05-06):
-- STRAIGHT_DIR_MAP    = (2, 1, 0, 3)  — straights/slopes/start/finish/chicanes
-- CURVE_RIGHT_DIR_MAP = (3, 0, 1, 2)  — *Right and *In curves (TMNF-right turn)
-- CURVE_LEFT_DIR_MAP  = (0, 1, 2, 3)  — *Left  and *Out curves (TMNF-left turn)
-
-Note: TMNF-right is geometrically a TM2020-LEFT turn (because z-axis is flipped),
-but openings calculation gives the same answer either way. silvercut's "Curve2Right"
-labels produce a counterclockwise loop in TM2020 view — that's the JSON convention.
-
-STRAIGHT_DIR_MAP rationale: JSON z-axis is flipped vs TM2020:
-  rot=0("North")→TM2020 South, rot=1("East")→TM2020 East, rot=2("South")→TM2020 North, rot=3("West")→TM2020 West.
-
-**Waypoint facing (2026-06-03):** In `tm2020_dir()`, Start and Finish are flipped
-180° relative to a straight at the same rotation: dir = (STRAIGHT_DIR_MAP[rot]+2)%4.
-Checkpoint stays unflipped (= STRAIGHT_DIR_MAP[rot]). Start/Finish gates face the
-opposite way from a straight so the car spawns/finishes pointing down the track.
-
----
-
-## Reference Maps (for parsing)
-```
-Local My Maps:
-  C:/Users/semyo/Documents/Trackmania/Maps/My Maps/jantronix wurst.Map.Gbx
-  C:/Users/semyo/Documents/Trackmania/Maps/My Maps/test_kurven.Map.Gbx
-
-Downloaded:
-  C:/Users/semyo/Documents/Trackmania/Maps/Downloaded/every platform block.Map.Gbx
-
-Repo:
-  tracks/_reference/test_kurven.Map.Gbx
-```
-
-Parse command:
-```powershell
-$env:PYTHONIOENCODING = "utf-8"
-py -3.12 -c "
-import sys
-sys.path.insert(0, 'converter')
-from gbxpy.parser import parse_file
-data = parse_file('PATH_TO_MAP.Map.Gbx')
-chunk = data.body[0x0304301F]
-for i, b in enumerate(chunk.Blocks):
-    print(f'{i:2d}. {b.blockName:35s} x={b.coord.x:3d} y={b.coord.y:3d} z={b.coord.z:3d} dir={b.dir}')
-"
-```
-
----
-
-## Block Catalog (VERIFIED)
-120 block names verified from mania-exchange image API (200=valid, 404=skip).
-Images: `catalog/block_images/{BlockName}.png`
-Full list: `catalog/blocks.json`
-Script: `catalog/fetch_blocks.py`
-
-Key groups confirmed in catalog:
-- `RoadTech*` – Start, Finish, Checkpoint, Straight, Curve1-4, SlopeBase/2, SpecialTurbo/Boost/Boost2
-- `RoadBump*` – same set as RoadTech
-- `RoadDirt*` – same set
-- `RoadIce*` – only Start, Straight, SpecialTurbo/Boost/Boost2 (no curves/checkpoints/finish!)
-- `PlatformTech/Grass/Dirt/Ice*` – Base, Curve1-3, Slope, Loops, Start/Finish/Checkpoint (Kacky blocks!)
-- `TrackWall*` – Straight, Curve1-4, SlopeBase/2, DeadendRound
-- `DecoWall*` – Base, Curve1-4, SlopeBase, LoopStart/End
-
-Chicanes DO exist: the catalog contains RoadTechChicaneX2/X3 (Left/Right) and
-Curve2–5; build.py maps the explicit X2/X3 ids to those real blocks.
-
-Placeholder ids (plain Chicane{Left,Right}, Bank*, Wall*, Narrow*,
-PenaltyDirt/Ice, Curve2–5{Right,Left}) are now FAIL-LOUD in build.py: they
-raise a ValueError instead of silently substituting a straight/Curve1.
-
-Map viewer (no TM2020 needed): https://gbx.bigbang1112.cz/tool/map-viewer-engine
-Upload any .Map.Gbx to view 3D layout in browser.
-
----
-
-## test_kurven.Map.Gbx – Parsed Ground Truth
-```
- 0. RoadTechStart        x=16 y=9 z=21 dir=North
- 1. RoadTechStraight     x=16 y=9 z=22 dir=North
- 2. RoadTechCurve1       x=16 y=9 z=23 dir=East
- 3. RoadTechCurve1       x=15 y=9 z=23 dir=West
- 4. RoadTechCurve1       x=15 y=9 z=24 dir=South
- 5. RoadTechCurve1       x=16 y=9 z=24 dir=North
- 6. RoadTechStraight     x=16 y=9 z=25 dir=North
- 7. RoadTechCurve1       x=16 y=9 z=26 dir=South
- 8. RoadTechCurve1       x=17 y=9 z=26 dir=North
- 9. RoadTechCurve1       x=17 y=9 z=27 dir=East
-10. RoadTechCurve1       x=16 y=9 z=27 dir=West
-11. RoadTechStraight     x=16 y=9 z=28 dir=North
-12. RoadTechFinish       x=16 y=9 z=29 dir=North
-```
-Key insight: Curve dir encodes which two faces are open (not the travel direction).
-See "Direction / Rotation Convention" section above for the full verified mapping.
-CURVE_RIGHT_DIR_MAP = (3,0,1,2) verified correct for all 4 corners of silvercut.
-
----
-
-## Commit Format
-```
-🏎️ Add {name} ({category} | D{d}/5 | C{c}/5)
-🔧 Fix {what}
-📝 Update {docs}
-📦 Add {reference maps or assets}
-```
-
----
-
-## Next Steps (priority order)
-1. ✅ Fix block rotation/direction mapping — curves verified, down slopes fixed
-2. Test silvercut.Map.Gbx in TM2020: confirm hill works and track is drivable
-3. Build reference maps in TM2020 editor and add to tracks/_reference/:
-   - test_slopes.Map.Gbx (verify slope dir behavior empirically)
-   - test_straights.Map.Gbx
-   - test_chicanes.Map.Gbx
-4. Test left curves (StadiumRoadMainCurve1Left) — CURVE_LEFT_DIR_MAP not yet empirically tested
-5. ✅ Block catalog downloaded — 120 verified names in catalog/blocks.json + images
-6. Expand BLOCK_MAP with PlatformTech* blocks (key for Kacky-style maps)
-7. Generate first fully drivable connected track
-8. Generate first D5/5 brutal track
-9. Start working toward Kacky-style maps 🎯
-
----
-
-## Cross-Session Rule
-After every session where something changed:
-Update this file (tools/kontext.md) and commit:
-```
-git add tools/kontext.md && git commit -m "📝 Update kontext.md" && git push
-```
+Als Nächstes Flat-Turns und Slope-N/E/S/W testen, Ergebnisse protokollieren,
+danach Curve2 und ChicaneX2 vermessen. Keine `verified`-Flags aufgrund eines
+reinen Python- oder GBX-Parser-Tests setzen.

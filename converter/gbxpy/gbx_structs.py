@@ -42,11 +42,12 @@ class CompressedLZ0(Tunnel):
 
 class ACompressedZip(Adapter):
     def _decode(self, raw_bytes, context, path):
-        self.buffer = io.BytesIO(raw_bytes)
-        return zipfile.ZipFile(self.buffer, "a", compression=zipfile.ZIP_DEFLATED)
+        # Each parsed map owns its buffer. Shared adapter state previously made
+        # parse(A), parse(B), generate(A) serialize B's embedded ZIP into A.
+        return zipfile.ZipFile(io.BytesIO(raw_bytes), "r")
 
     def _encode(self, zip, context, path):
-        return self.buffer.getvalue()
+        return zip.fp.getvalue()
 
 
 GbxCompressedZip = ACompressedZip(GbxBytes)

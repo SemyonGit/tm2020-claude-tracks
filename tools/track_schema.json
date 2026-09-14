@@ -15,7 +15,7 @@
         "difficulty":   { "type": "integer", "minimum": 1, "maximum": 5 },
         "creativity":   { "type": "integer", "minimum": 1, "maximum": 5, "description": "1=klassisch, 5=experimentell" },
         "target_at":    { "type": "string", "description": "Ziel-Author-Time z.B. '00:45.000'" },
-        "generated_by": { "type": "string", "const": "Claude (Anthropic)" },
+        "generated_by": { "type": "string", "minLength": 1, "description": "Tatsächlicher Urheber/Generator; bestehende Claude-Dateien bleiben gültig" },
         "generated_at": { "type": "string", "format": "date-time" },
         "description":  { "type": "string" }
       }

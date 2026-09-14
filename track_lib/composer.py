@@ -18,14 +18,21 @@ guaranteed connected because every cell is placed at the previous cell's exit.
 from __future__ import annotations
 import datetime as _dt
 from .blocks import SEGMENTS, advance
+from .schema import schema_errors
+from .validator import validate
 
 DEFAULT_ORIGIN = {"x": 16, "y": 1, "z": 20, "heading": 1}
 
 
-def compose(design: dict) -> dict:
+def compose(design: dict, *, allow_unverified: bool = False) -> dict:
+    errors = schema_errors(design, 'design')
+    if errors:
+        raise ValueError('\n'.join(errors))
+    if sum(step.get('count', 1) for step in design['path']) > 4096:
+        raise ValueError('design exceeds 4096 expanded blocks')
     origin = {**DEFAULT_ORIGIN, **design.get("origin", {})}
     cursor = (origin["x"], origin["y"], origin["z"])
-    heading = origin["heading"] & 3
+    heading = origin["heading"]
 
     blocks: list[dict] = []
     checkpoints: list[int] = []
@@ -51,11 +58,11 @@ def compose(design: dict) -> dict:
 
     meta = {
         "name": "Untitled", "author": "SemyonGit", "category": "speedtech",
-        "difficulty": 3, "creativity": 3, "generated_by": "Claude (Anthropic)",
-        "generated_at": _dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "difficulty": 3, "creativity": 3, "generated_by": "TM2020 connector composer",
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         **design.get("meta", {}),
     }
-    return {
+    track = {
         "meta": meta,
         "settings": design.get("settings", {"environment": "Stadium", "mood": "Day"}),
         "blocks": blocks,
@@ -63,3 +70,7 @@ def compose(design: dict) -> dict:
         "sections": design.get("sections", []),
         "_warnings": warnings,
     }
+    errors = validate(track, allow_unverified=allow_unverified)
+    if errors:
+        raise ValueError('\n'.join(errors))
+    return track
