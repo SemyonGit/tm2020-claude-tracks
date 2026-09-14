@@ -281,3 +281,16 @@ def test_committed_gbx_is_reproducible(path, tmp_path):
     track_path = path.with_name(path.name.replace('.design.json', '.json'))
     output = converter.build(track_path, deploy=False, allow_unverified=path.name.startswith('slope_'), output_dir=tmp_path)
     assert output.read_bytes() == path.with_name(output.name).read_bytes()
+
+
+def test_catalog_sorting_is_identical_on_windows_and_linux():
+    from pathlib import PureWindowsPath
+    from types import SimpleNamespace
+    from catalog.fetch_blocks import indexes, PNG_SIGNATURE
+    class WindowsImage(PureWindowsPath):
+        def read_bytes(self):
+            return PNG_SIGNATURE
+    filenames = ['RoadTechBranchToDiagLeft.png', 'RoadTechBranchTShaped.png']
+    folder = SimpleNamespace(glob=lambda pattern: [WindowsImage(name) for name in filenames])
+    names, _ = indexes(folder)
+    assert names == ['RoadTechBranchTShaped', 'RoadTechBranchToDiagLeft']

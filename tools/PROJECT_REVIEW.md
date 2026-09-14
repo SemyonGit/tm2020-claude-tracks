@@ -46,7 +46,7 @@ als solche übernommen und nicht als neue Beobachtung ausgegeben.
 | Mittel | Ein gemeinsam genutzter ZIP-Puffer im Parser konnte nach mehreren Parse-Aufrufen die falschen eingebetteten Daten liefern. | Pro Map eigener Puffer; reproduzierbarer Regressionstest. |
 | Mittel | Katalog-Skript führte beim Import Netzwerkaktionen aus, verschluckte Fehler und konnte Listen verkürzen. | Lokaler Indexaufbau als Standard; explizite Downloadliste; Fehler sichtbar; vorhandene Indizes nicht durch leere Ergebnisse ersetzt. |
 | Mittel | Dokumentation nannte gleichzeitig 120 und 191 Blöcke, widersprüchliche Rotationen und Prüfstände. | README, Setup, Kontext und Arbeitsablauf neu gefasst; 191 Bildnamen, sechs geprüfte Grundsegmente, zwei experimentelle. |
-| Mittel | Keine automatischen Tests oder CI. | 73 Regressionstests und Workflow für Python 3.12 unter Linux und Windows. |
+| Mittel | Keine automatischen Tests oder CI. | 74 Regressionstests und Workflow für Python 3.12 unter Linux und Windows. |
 
 Die CRC-Berechnung folgt dem veröffentlichten
 [GBX.NET-Quellcode](https://github.com/BigBang1112/gbx-net/blob/master/Src/GBX.NET/Engines/Game/CGameCtnChallenge.cs).
@@ -88,7 +88,7 @@ bleiben unverändert als Diagnosematerial erhalten.
 
 ## Durchgeführte Prüfung
 
-Lokal unter **Linux mit Python 3.12.14: 73 Tests bestanden**. Dazu gehören:
+Lokal unter **Linux mit Python 3.12.14: 74 Tests bestanden**. Dazu gehören:
 Rotation-/Waypoint-Fehler, Grenzen und Eingabetypen, fehlerhafte Altstrecken,
 Batch-Fehlercodes, Pfadbehandlung, Steigungs-Opt-in, GBX-Namen/UID/CRC, voneinander
 unabhängige ZIP-Puffer und bytegleiche Wiederholungsbuilds aller sechs aktuellen
@@ -96,7 +96,10 @@ Design-/GBX-Paare.
 
 Das Fünf-Map-Testpaket wurde vollständig gebaut, die Referenz-Exporthilfe
 aufgerufen und der Katalogcheck bestanden. Git-Diffs wurden auf Whitespacefehler
-geprüft. Die CI ist für Linux und Windows eingerichtet; den Status einer
+geprüft. Der erste Windows-CI-Lauf deckte eine abweichende Path-Sortierung auf;
+sie wurde durch eine explizite Sortierung der Dateinamen und einen zusätzlichen
+Regressionstest korrigiert. Die Actions verwenden die Node-24-basierte v6.
+Die CI ist für Linux und Windows eingerichtet; den Status einer
 konkreten Revision zeigt GitHub Actions.
 
 **Nicht hier ausgeführt:** Trackmania starten, die neuen Maps fahren,

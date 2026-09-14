@@ -72,7 +72,10 @@ Das ist kein direkter Gleichlauf zwischen JSON-Heading und GBX-`dir`.
   Ausgabenamen. Expliziter Maps-Ordner und Ausgabeordner sind möglich.
 - Katalog wird aus vorhandenen PNGs reproduziert. Downloads nur noch über
   explizite Namenslisten; Netzwerkfehler ersetzen den Katalog nicht durch Leerlisten.
-- Fünf neue Testmaps, Referenz-Export, Tests und Linux-/Windows-CI ergänzt.
+- Fünf neue Testmaps, Referenz-Export, 74 Regressionstests und Linux-/Windows-CI
+  ergänzt. Der erste Windows-Lauf fand eine abweichende Katalogsortierung;
+  Dateinamen werden jetzt explizit und plattformunabhängig sortiert. Die
+  GitHub-Actions verwenden die Node-24-basierte v6.
 
 ## Noch offen
 

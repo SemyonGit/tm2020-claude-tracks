@@ -17,7 +17,9 @@ PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 
 def indexes(image_dir: Path):
     names = []
-    for path in sorted(image_dir.glob('*.png')):
+    # Path ordering is case-insensitive on Windows. Sort the literal names so
+    # mixed-case suffixes (e.g. Base2x1/Left) have the same order on every OS.
+    for path in sorted(image_dir.glob('*.png'), key=lambda p: p.name):
         if not path.read_bytes().startswith(PNG_SIGNATURE):
             raise ValueError(f'not a PNG image: {path}')
         names.append(path.stem)
