@@ -7,8 +7,8 @@ ersetzt die Block-Liste mit den JSON-Daten und schreibt eine fertige .Map.Gbx.
 
 Beispiele
 ---------
-    python converter/build.py tracks/speedtech/silvercut/silvercut.json
-    python converter/build.py tracks/speedtech/silvercut/silvercut.json --dry-run
+    python converter/build.py tracks/speedtech/proofcut/proofcut.json
+    python converter/build.py tracks/speedtech/proofcut/proofcut.json --dry-run
     python converter/build.py tracks/ --batch
     python converter/build.py track.json --no-deploy
 """
@@ -16,9 +16,13 @@ Beispiele
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
-import shutil
+import os
 import sys
+import xml.etree.ElementTree as ET
+import zlib
 from pathlib import Path
 
 # Vendored gbx-py liegt neben diesem Skript
@@ -26,7 +30,12 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
 from construct import Container  # noqa: E402
-from gbxpy import parse_file, generate_file  # noqa: E402
+from gbxpy import parse_file, parse_bytes, generate_file  # noqa: E402
+
+sys.path.insert(0, str(ROOT.parent))
+from track_lib.blocks import BLOCK_SPECS  # noqa: E402
+from track_lib.files import atomic_write  # noqa: E402
+from track_lib.validator import GRID_SIZE, validate  # noqa: E402
 
 # ─── Konfiguration ─────────────────────────────────────────────────────────────
 
@@ -34,10 +43,9 @@ TEMPLATE = ROOT / "template.Map.Gbx"
 
 TM2020_MAP_DIRS = [
     Path.home() / "Documents" / "Trackmania" / "Maps" / "My Maps",
-    Path.home() / "Documents" / "ManiaPlanet" / "Maps" / "My Maps",
-    # Windows-Pfade falls Codespaces/WSL aus Linux mounted /mnt/c
-    Path("/mnt/c/Users") / (Path.home().name) / "Documents" / "Trackmania" / "Maps" / "My Maps",
 ]
+if os.environ.get('OneDrive'):
+    TM2020_MAP_DIRS.append(Path(os.environ['OneDrive']) / 'Documents' / 'Trackmania' / 'Maps' / 'My Maps')
 
 # ─── Koordinatensystem ─────────────────────────────────────────────────────────
 # TM2020-Stadium-Maps haben den Editor-Boden bei y=8; Bodenblöcke liegen also
@@ -50,7 +58,7 @@ GROUND_Y_JSON = 1  # JSON-y, bei dem ein Block direkt auf dem Editor-Boden steht
 # ─── Block-Mapping ─────────────────────────────────────────────────────────────
 # Unsere JSON-IDs → echte TM2020-Block-Namen.
 #
-# Verifizierte Namen (aus realen TM2020-Editor-Saves geparst):
+# Historical name/geometry observations recorded before this refresh:
 #   • template.Map.Gbx           → RoadTechStart, RoadTechFinish
 #   • every platform block.Gbx   → vollständiger RoadTech-Katalog (148 Namen)
 #   • jantronix wurst.Gbx        → RoadBump*-Set, zeigt Footprint-Verhalten:
@@ -59,29 +67,22 @@ GROUND_Y_JSON = 1  # JSON-y, bei dem ein Block direkt auf dem Editor-Boden steht
 #       RoadBumpSlopeBase         = +1 y pro Zelle in Fahrtrichtung
 #       RoadBumpSlopeBase2        = +2 y pro Zelle (steiler)
 #
-# Footprint-Regel:
-# Unsere JSONs verwenden ein 1-Zelle-pro-Block-Raster (jeder Block = 1 Grid-
-# Cell, +1 y pro Slope-Schritt). Mehr-Zellen-Blöcke (Curve2..5, ChicaneX2/X3,
-# SlopeBase2, Loops) würden mit dem Folgeblock kollidieren ("Blöcke liegen
-# ineinander"). Daher mappen Curve2..5 und Chicane{Left,Right} per Default auf
-# RoadTechCurve1 (1×1) und Slope2 auf RoadTechSlopeBase (+1 y/Zelle). Wer
-# explizit Mehr-Zellen-Geometrie will, kann die expliziten IDs ChicaneX2/X3
-# bzw. RoadTechCurve2..5 / SlopeBase2 direkt nutzen — dann muss aber das JSON
-# entsprechend lückig platziert sein.
-#
-# Rotation: JSON 0/1/2/3 → North/East/South/West (TM2020-Konvention).
+# This dictionary records name aliases, not proof of usable geometry.
+# PLACEHOLDER_IDS are blocked by resolve_block(). The validator accepts only
+# the explicitly modelled single-cell vocabulary in track_lib/blocks.py.
+# Multi-cell names stay here for future reference-map calibration.
 
 BLOCK_MAP: dict[str, str] = {
     # Start / Finish / Checkpoint
     "StadiumRoadMainStart":          "RoadTechStart",
     "StadiumRoadMainFinish":         "RoadTechFinish",
     "StadiumRoadMainCheckpointIn":   "RoadTechCheckpoint",
-    "Checkpoint":                    "RoadTechStraight",  # Checkpoint via isWaypoint-Flag
+    "Checkpoint":                    "RoadTechCheckpoint",
 
     # Straight
     "StadiumRoadMainStraight":       "RoadTechStraight",
 
-    # Curves — alle auf 1×1-Curve1 mappen (JSON-Layout = 1 Zelle pro Block)
+    # Curve1 is supported; the historical Curve2-5 aliases below are BLOCKED.
     "StadiumRoadMainCurve1Right":    "RoadTechCurve1",
     "StadiumRoadMainCurve1Left":    "RoadTechCurve1",
     "StadiumRoadMainCurve2Right":    "RoadTechCurve1",
@@ -95,10 +96,8 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainCurve5Right":    "RoadTechCurve1",
     "StadiumRoadMainCurve5Left":     "RoadTechCurve1",
 
-    # Chicanes — JSON-Layout platziert sie in gerader Linie (kein x/z-Versatz),
-    # also In-Line-Jog-Visual ohne Richtungsänderung. Curve1 würde Anschluss-
-    # Faces falsch ausrichten; daher Straight (Strecken-Geometrie bleibt heil).
-    # Explizite X2/X3-IDs landen auf den echten Mehr-Zellen-Chicanes.
+    # Historical plain chicane placeholders are BLOCKED. X2/X3 have real names
+    # but still need connector metadata before the validator can accept them.
     "StadiumRoadMainChicaneRight":   "RoadTechStraight",
     "StadiumRoadMainChicaneLeft":    "RoadTechStraight",
     "StadiumRoadMainChicaneX2Right": "RoadTechChicaneX2Right",
@@ -106,18 +105,18 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainChicaneX3Right": "RoadTechChicaneX3Right",
     "StadiumRoadMainChicaneX3Left":  "RoadTechChicaneX3Left",
 
-    # Banking — RoadTechBank* does not exist; fallback to Straight. TiltStraight uses real block.
+    # Banking: historical straight substitutions are BLOCKED; tilt geometry is not modelled.
     "StadiumRoadMainBankRight":      "RoadTechStraight",
     "StadiumRoadMainBankLeft":       "RoadTechStraight",
     "StadiumRoadMainTiltStraight":   "RoadTechTiltStraight",
 
-    # Slopes — JSON-Delta = +1 y/Zelle ⇒ SlopeBase (NICHT SlopeBase2).
+    # Provisional one-level slopes; misleading Slope2 substitutions are BLOCKED.
     "StadiumRoadMainSlope1Up":       "RoadTechSlopeBase",
     "StadiumRoadMainSlope1Down":     "RoadTechSlopeBase",
     "StadiumRoadMainSlope2Up":       "RoadTechSlopeBase",
     "StadiumRoadMainSlope2Down":     "RoadTechSlopeBase",
 
-    # Special — RoadTechHole/Penalty exist; PenaltyDirt/Ice/Narrow* do not (fallback to Straight)
+    # Special names: historical dirt/ice/narrow straight substitutions are BLOCKED.
     "StadiumRoadMainHole":           "RoadTechHole",
     "StadiumRoadMainPenalty":        "RoadTechPenalty",
     "StadiumRoadMainPenaltyDirt":    "RoadTechStraight",
@@ -126,11 +125,11 @@ BLOCK_MAP: dict[str, str] = {
     "StadiumRoadMainNarrowCenter":   "RoadTechStraight",
     "StadiumRoadMainNarrowSide":     "RoadTechStraight",
 
-    # Walls — no RoadTech wall variant in catalog; fall back to Straight
+    # Historical wall-to-straight substitutions are BLOCKED.
     "StadiumRoadMainWallLeft":       "RoadTechStraight",
     "StadiumRoadMainWallRight":      "RoadTechStraight",
 
-    # ─── Catalog-verified explicit aliases (from 191-PNG catalog) ───
+    # Catalog-backed name aliases (191 PNGs); NOT verified connector geometry.
 
     # Curve
     "StadiumRoadMainCurve2":                                "RoadTechCurve2",
@@ -365,7 +364,7 @@ BLOCK_MAP: dict[str, str] = {
 DIR_NAMES = ("North", "East", "South", "West")  # TM2020 dir int → name
 
 # JSON rot (0..3) → TM2020 dir int (0..3)
-STRAIGHT_DIR_MAP    = (2, 1, 0, 3)   # straights, start, finish, slopes, tilt, chicanes
+STRAIGHT_DIR_MAP    = (2, 1, 0, 3)   # straight/checkpoint; Start/Finish add 180 degrees
 CURVE_RIGHT_DIR_MAP = (3, 0, 1, 2)   # *Right / *In  curves (TMNF-right turn)
 CURVE_LEFT_DIR_MAP  = (0, 1, 2, 3)   # *Left  / *Out curves (TMNF-left  turn)
 
@@ -383,6 +382,7 @@ PLACEHOLDER_IDS = {
     "StadiumRoadMainCurve3Right", "StadiumRoadMainCurve3Left",
     "StadiumRoadMainCurve4Right", "StadiumRoadMainCurve4Left",
     "StadiumRoadMainCurve5Right", "StadiumRoadMainCurve5Left",
+    "StadiumRoadMainSlope2Up", "StadiumRoadMainSlope2Down",
 }
 
 
@@ -402,25 +402,15 @@ def is_waypoint_block(json_id: str) -> bool:
 
 
 def tm2020_dir(json_id: str, json_rot: int) -> str:
-    """Translate JSON rotation (0..3) to TM2020 dir name.
+    """Map a supported single-cell travel heading to GBX orientation.
 
-    Three classes of blocks, in priority order:
-
-    1. Waypoints (Start, Finish, Checkpoint) — these are gates the car drives
-       THROUGH. Their dir must equal what a Straight at the same position would
-       have, so the gate is perpendicular to the road and the car enters the
-       block facing the driving direction. Always STRAIGHT_DIR_MAP, regardless
-       of any "Curve"/"In"/"Out" tokens that might appear in waypoint ID variants.
-
-    2. True 1×1 corner curves (ID contains "Curve" AND ends in Right/Left/In/Out)
-       — dir encodes which TWO cell faces are open (entry+exit), not heading.
-       Right/In → CURVE_RIGHT_DIR_MAP, Left/Out → CURVE_LEFT_DIR_MAP.
-
-    3. Everything else (straights, slopes, banks, chicanes, branches,
-       tilt-transitions) — dir = heading direction → STRAIGHT_DIR_MAP.
+    Start/Finish use a 180-degree flip; Checkpoint follows the straight map.
+    Curves encode open faces. Down slopes are handled by build().
     """
-    rot = json_rot & 3
-    # 1. Waypoints face the driving direction (same as a straight at this rot).
+    if type(json_rot) is not int or json_rot not in range(4):
+        raise ValueError('rotation must be an integer from 0 to 3')
+    rot = json_rot
+    # 1. Preserve the Start/Finish correction recorded in June 2026.
     if is_waypoint_block(json_id):
         base = STRAIGHT_DIR_MAP[rot]
         if "Start" in json_id or "Finish" in json_id:
@@ -507,155 +497,191 @@ def find_tm2020_maps_dir() -> Path | None:
     return None
 
 
-# ─── Build ─────────────────────────────────────────────────────────────────────
+# Build and CLI
+
+def header_chunk(data, chunk_id):
+    for entry, chunk in zip(data.header.entries, data.header.data):
+        if entry.id == chunk_id:
+            return chunk
+    return None
+
+
+def close_map(data) -> None:
+    embedded = data.body.get(0x03043054)
+    if embedded and embedded.get('embeddedData'):
+        embedded.embeddedData.zip.close()
+
+
+def track_uid(track: dict) -> str:
+    # Stable for the same named layout; changes when the actual geometry changes.
+    identity = {key: track[key] for key in ('settings', 'blocks', 'checkpoints')}
+    identity['name'] = track['meta']['name']
+    identity['author'] = track['meta']['author']
+    raw = json.dumps(identity, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    return base64.urlsafe_b64encode(hashlib.sha256(raw).digest()[:20]).decode('ascii').rstrip('=')
+
+
+def update_map_metadata(data, track: dict) -> str:
+    name, uid = track['meta']['name'], track_uid(track)
+    body = find_blocks_chunk(data)
+    header = header_chunk(data, 0x03043003)
+    if header is None:
+        raise ValueError('template is missing the map-info header')
+    for chunk in (body, header):
+        chunk.mapName = name
+        chunk.mapInfo.id = uid
+    # Keep the template's real game-account author. A GitHub login is not a
+    # Trackmania account ID. meta.author participates only in the project UID.
+    xml_chunk = header_chunk(data, 0x03043005)
+    if xml_chunk is not None:
+        xml = ET.fromstring(xml_chunk.xml)
+        ident = xml.find('ident')
+        if ident is None:
+            raise ValueError('template XML has no ident element')
+        ident.set('name', name)
+        ident.set('uid', uid)
+        desc = xml.find('desc')
+        if desc is not None:
+            desc.set('validated', '0')
+        xml_chunk.xml = ET.tostring(xml, encoding='unicode')
+    # GBX.NET CGameCtnChallenge.ComputeCrc32: hash bytes as uppercase hex + UID.
+    password = data.body.get(0x03043029)
+    if password is not None:
+        password_hex = int(password.passwordHash).to_bytes(16, 'little').hex().upper()
+        password.crc32 = zlib.crc32(f'0x{password_hex}???{uid}'.encode('ascii'))
+    return uid
+
+
+def block_signature(block):
+    return (block.name, block.coords.x, block.coords.y, block.coords.z,
+            str(block.dir), block.flags.isWaypoint, block.flags.isGround)
+
 
 def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
-          force: bool = False) -> Path | None:
-    track = json.loads(json_path.read_text(encoding="utf-8"))
-    meta = track.get("meta", {})
-    name = meta.get("name", json_path.stem)
-    blocks_in = track.get("blocks", [])
-    cps = set(track.get("checkpoints", []))
-
-    import sys as _sys
-    from pathlib import Path as _Path
-    _root = str(_Path(__file__).resolve().parent.parent)
-    if _root not in _sys.path:
-        _sys.path.insert(0, _root)
-    from track_lib.validator import validate as _validate
-    _problems = _validate(track)
-    if _problems:
-        print("Validator found problems:")
-        for _p in _problems:
-            print("   " + _p)
-        if not force:
-            print("   build aborted (use --force to override)")
-            sys.exit(1)
-
-    print(f"🏎️  {name}  |  {meta.get('category','?')}  |  "
-          f"D{meta.get('difficulty','?')}/5  C{meta.get('creativity','?')}/5")
-
+          force: bool = False, *, allow_unverified: bool = False,
+          maps_dir: Path | None = None, output_dir: Path | None = None) -> Path | None:
+    if force:
+        raise ValueError('--force no longer bypasses invalid geometry; use --allow-unverified only for modelled slopes')
+    json_path = Path(json_path)
+    track = json.loads(json_path.read_text(encoding='utf-8'))
+    if isinstance(track, dict) and 'path' in track and 'blocks' not in track:
+        raise ValueError('design input: run compose.py first')
+    problems = validate(track, allow_unverified=allow_unverified)
+    if problems:
+        raise ValueError('validation failed:\n' + '\n'.join(problems))
+    name = track['meta']['name']
+    print(f'{name}: {len(track["blocks"])} blocks, {len(track["checkpoints"])} checkpoints')
     block_instances = []
-    for i, b in enumerate(blocks_in):
-        json_id = b["id"]
-        real = resolve_block(json_id)
-        is_wp = (i in cps) or is_waypoint_block(json_id)
-        json_y = b["y"]
-        rot = b.get("rotation", 0)
-
-        is_down_slope = "Slope" in json_id and "Down" in json_id
-        if is_down_slope:
-            # Down slopes: the car enters at the HIGH end and exits LOW.
-            # The block origin (y) is the LOW end; HIGH end = y+1 in the dir direction.
-            # So dir must point toward HIGH = opposite of travel direction.
-            # json_y in the JSON is the entry (high) road surface → TM2020 y = json_y - 1 + Y_OFFSET.
-            raw_dir = STRAIGHT_DIR_MAP[rot & 3]
-            dir_name = DIR_NAMES[(raw_dir + 2) % 4]
-            tm2020_y = (json_y - 1) + Y_OFFSET
-            is_ground_val = (json_y - 1 == GROUND_Y_JSON)
-        else:
-            dir_name = tm2020_dir(json_id, rot)
-            tm2020_y = json_y + Y_OFFSET
-            is_ground_val = (json_y == GROUND_Y_JSON)
-
-        inst = make_block(
-            name=real,
-            x=b["x"], y=tm2020_y, z=b["z"],
-            dir_name=dir_name,
-            is_waypoint=is_wp,
-            is_ground=is_ground_val,
-        )
-        block_instances.append(inst)
-
-    print(f"📦 {len(block_instances)} Blöcke "
-          f"(Checkpoints: {sum(1 for inst in block_instances if inst.flags.isWaypoint)})")
-
+    warned = set()
+    for block in track['blocks']:
+        block_id = block['id']
+        spec = BLOCK_SPECS[block_id]
+        if not spec['verified'] and block_id not in warned:
+            print(f'WARNING: {block_id} is UNVERIFIED in-game')
+            warned.add(block_id)
+        down = spec['kind'] == 'slope_down'
+        low_y = block['y'] - int(down)
+        rotation = block['rotation']
+        direction = (DIR_NAMES[(STRAIGHT_DIR_MAP[rotation] + 2) % 4] if down
+                     else tm2020_dir(block_id, rotation))
+        block_instances.append(make_block(
+            name=resolve_block(block_id), x=block['x'], y=low_y + Y_OFFSET,
+            z=block['z'], dir_name=direction, is_waypoint=spec['waypoint'],
+            is_ground=low_y == GROUND_Y_JSON,
+        ))
     if dry_run:
-        print("\n🔍 Dry-Run — Block-Liste:")
         for i, inst in enumerate(block_instances):
-            wp = " ★" if inst.flags.isWaypoint else ""
-            print(f"  [{i:3d}] {inst.name:32s} "
-                  f"@ ({inst.coords.x:3d},{inst.coords.y:3d},{inst.coords.z:3d}) "
-                  f"dir={inst.dir}{wp}")
+            print(f'[{i:3d}] {inst.name:30s} ({inst.coords.x},{inst.coords.y},{inst.coords.z}) {inst.dir}')
         return None
-
-    if not TEMPLATE.exists():
-        print(f"\n❌ Kein TM2020-Template gefunden: {TEMPLATE}")
-        print("   → siehe converter/setup.md (How to create template.Map.Gbx).")
-        sys.exit(1)
-
-    data = parse_file(str(TEMPLATE))
-    chunk = find_blocks_chunk(data)
-    if chunk is None:
-        print(f"❌ Template enthält keinen Blocks-Chunk ({hex(BLOCKS_CHUNK_ID)}).")
-        sys.exit(1)
-
-    chunk.Blocks = block_instances
-    if "mapName" in chunk:
-        chunk.mapName = name
-
-    dropped = strip_block_dependent_chunks(data)
-    if dropped:
-        print(f"🗑  Drop blockabhängige Chunks: "
-              f"{', '.join(f'0x{c:08X}' for c in dropped)}")
-
-    out_path = json_path.parent / f"{name}.Map.Gbx"
-    out_path.write_bytes(generate_file(data))
-    print(f"✅ {out_path}")
-
+    if not TEMPLATE.is_file():
+        raise ValueError(f'missing template: {TEMPLATE}; see converter/setup.md')
+    destination = Path(maps_dir) if maps_dir else find_tm2020_maps_dir()
+    if deploy and maps_dir and not destination.is_dir():
+        raise ValueError(f'maps directory does not exist: {destination}')
+    data = parse_file(str(TEMPLATE), recursive=False)
+    try:
+        if data.get('_errors'):
+            raise ValueError(f'template parse errors: {data._errors}')
+        chunk = find_blocks_chunk(data)
+        if chunk is None:
+            raise ValueError('template has no block chunk')
+        if tuple(chunk.size[key] for key in ('x', 'y', 'z')) != GRID_SIZE:
+            raise ValueError('template size differs from the supported 48 x 40 x 48 grid')
+        if chunk.decoration.id != '48x48Screen155Day':
+            raise ValueError('template decoration differs from the supported Stadium / Day template')
+        chunk.Blocks = block_instances
+        uid = update_map_metadata(data, track)
+        strip_block_dependent_chunks(data)
+        raw = generate_file(data)
+        check = parse_bytes(raw, recursive=False)
+        try:
+            if check.get('_errors'):
+                raise ValueError(f'generated GBX parse errors: {check._errors}')
+            if [block_signature(b) for b in find_blocks_chunk(check).Blocks] != [block_signature(b) for b in block_instances]:
+                raise ValueError('generated GBX block round-trip mismatch')
+            if header_chunk(check, 0x03043003).mapInfo.id != uid:
+                raise ValueError('generated GBX UID mismatch')
+        finally:
+            close_map(check)
+    finally:
+        close_map(data)
+    out_path = (Path(output_dir) if output_dir else json_path.parent) / f'{name}.Map.Gbx'
+    atomic_write(out_path, raw)
+    print(f'Built {out_path} (UID {uid}); in-game validation still required')
     if deploy:
-        target = find_tm2020_maps_dir()
-        if target:
-            dest = target / out_path.name
-            shutil.copy2(out_path, dest)
-            print(f"🎮 Deployed: {dest}")
+        if destination:
+            dest = destination / out_path.name
+            if dest.resolve() != out_path.resolve():
+                atomic_write(dest, raw)
+            print(f'Copied to {dest}')
         else:
-            print("⚠ TM2020 Maps-Ordner nicht gefunden — manuell kopieren.")
-
+            print('Trackmania Maps folder not found; copy manually or use --maps-dir.')
     return out_path
 
 
-# ─── CLI ───────────────────────────────────────────────────────────────────────
-
-def main() -> None:
-    ap = argparse.ArgumentParser(description="TM2020 Track Converter (gbx-py direct)")
-    ap.add_argument("input", help="Pfad zur track.json oder Ordner (mit --batch)")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="Nur Block-Liste anzeigen, nichts schreiben")
-    ap.add_argument("--no-deploy", action="store_true",
-                    help="Nicht in TM2020-Maps-Ordner kopieren")
-    ap.add_argument("--batch", action="store_true",
-                    help="Eingabe ist ein Ordner — alle *.json rekursiv bauen")
-    ap.add_argument("--force", action="store_true",
-                    help="Trotz Validator-Problemen bauen")
-    args = ap.parse_args()
-
-    target = Path(args.input)
-    if not target.exists():
-        print(f"❌ Nicht gefunden: {target}")
-        sys.exit(1)
-
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description='TM2020 JSON to GBX converter')
+    parser.add_argument('input', type=Path)
+    parser.add_argument('--dry-run', action='store_true', help='validate and print blocks without writing')
+    parser.add_argument('--no-deploy', action='store_true')
+    parser.add_argument('--maps-dir', type=Path, help='explicit Trackmania Maps folder (e.g. OneDrive or WSL)')
+    parser.add_argument('--output-dir', type=Path, help='write GBX files here instead of next to the input')
+    parser.add_argument('--batch', action='store_true', help='build low-level JSON files, excluding *.design.json')
+    parser.add_argument('--allow-unverified', action='store_true', help='allow modelled slopes for calibration')
+    parser.add_argument('--force', action='store_true', help=argparse.SUPPRESS)
+    args = parser.parse_args(argv)
+    if not args.input.exists() or (args.batch and not args.input.is_dir()) or (not args.batch and not args.input.is_file()):
+        print(f'ERROR: input must be an existing {"directory" if args.batch else "file"}: {args.input}', file=sys.stderr)
+        return 1
+    files = (sorted(f for f in args.input.rglob('*.json') if not f.name.endswith('.design.json'))
+             if args.batch else [args.input])
+    if not files:
+        print('ERROR: no track JSON files found', file=sys.stderr)
+        return 1
+    failed = 0
+    outputs = set()
+    for path in files:
+        try:
+            # Two tracks with the same name must not silently overwrite each other
+            # when using a shared output/deploy folder in batch mode.
+            track = json.loads(path.read_text(encoding='utf-8'))
+            name = track.get('meta', {}).get('name') if isinstance(track, dict) else None
+            destination = args.output_dir or path.parent
+            key = (str(destination.resolve()), str(name).casefold())
+            deploy_key = ('deploy', str(name).casefold())
+            if key in outputs or (not args.no_deploy and deploy_key in outputs):
+                raise ValueError(f'duplicate output map name: {name}')
+            build(path, deploy=not args.no_deploy, dry_run=args.dry_run,
+                  force=args.force, allow_unverified=args.allow_unverified,
+                  maps_dir=args.maps_dir, output_dir=args.output_dir)
+            outputs.update((key, deploy_key))
+        except Exception as exc:
+            print(f'ERROR: {path}: {exc}', file=sys.stderr)
+            failed += 1
     if args.batch:
-        files = sorted(target.rglob("*.json"))
-        print(f"📂 Batch: {len(files)} JSONs in {target}\n")
-        ok = fail = 0
-        for f in files:
-            print(f"— {f.relative_to(target)}")
-            try:
-                build(f, deploy=not args.no_deploy, dry_run=args.dry_run,
-                      force=args.force)
-                ok += 1
-            except SystemExit:
-                fail += 1
-            except Exception as e:
-                print(f"  ❌ {type(e).__name__}: {e}")
-                fail += 1
-            print()
-        print(f"━━━ Fertig: {ok} ok, {fail} fehlgeschlagen ━━━")
-    else:
-        build(target, deploy=not args.no_deploy, dry_run=args.dry_run,
-              force=args.force)
+        print(f'Batch: {len(files) - failed} ok, {failed} failed; design files excluded')
+    return 1 if failed else 0
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    sys.exit(main())

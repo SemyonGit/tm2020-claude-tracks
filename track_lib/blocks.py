@@ -2,8 +2,8 @@
 
 Coordinate convention (matches tools/track_schema.json):
   rotation/heading 0=N 1=E 2=S 3=W ; travel vectors below ; +y = up.
-Only blocks whose geometry is verified against a real TM2020 map live in
-VERIFIED. Everything else is UNVERIFIED and must not be emitted silently.
+Verified flags preserve the in-game reports recorded in June 2026.
+Slopes have a provisional model and require an explicit test opt-in.
 """
 from __future__ import annotations
 
@@ -52,14 +52,12 @@ def advance(kind: str, cursor: tuple[int, int, int], heading: int):
     raise ValueError(f"unknown segment kind: {kind!r}")
 
 
+BLOCK_SPECS = {spec['id']: spec for spec in SEGMENTS.values()}
+BLOCK_SPECS['Checkpoint'] = SEGMENTS['checkpoint']
+
+
 def classify(json_id: str) -> str:
-    """Infer the cursor-advance kind from a raw JSON block id (for the validator)."""
-    if "Slope" in json_id and "Down" in json_id:
-        return "slope_down"
-    if "Slope" in json_id and "Up" in json_id:
-        return "slope_up"
-    if "Curve" in json_id and (json_id.endswith("Right") or json_id.endswith("In")):
-        return "curve_right"
-    if "Curve" in json_id and (json_id.endswith("Left") or json_id.endswith("Out")):
-        return "curve_left"
-    return "straight"
+    """Return an explicitly modelled kind; never guess multi-cell geometry."""
+    if json_id not in BLOCK_SPECS:
+        raise ValueError(f'{json_id!r}: no connector/footprint model; catalog names alone are insufficient')
+    return BLOCK_SPECS[json_id]['kind']

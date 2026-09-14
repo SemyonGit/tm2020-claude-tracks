@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TM2020 path design",
+  "type": "object",
+  "required": [
+    "meta",
+    "path"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Track-Name"
+        },
+        "author": {
+          "type": "string",
+          "description": "GitHub-Username des Besitzers"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "speedtech",
+            "fullspeed",
+            "tech",
+            "dirt",
+            "rally",
+            "stunts",
+            "ice",
+            "fun",
+            "lol",
+            "beginner"
+          ]
+        },
+        "difficulty": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "creativity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "1=klassisch, 5=experimentell"
+        },
+        "target_at": {
+          "type": "string",
+          "description": "Ziel-Author-Time z.B. '00:45.000'"
+        },
+        "generated_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tatsächlicher Urheber/Generator; bestehende Claude-Dateien bleiben gültig"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "enum": [
+            "Stadium",
+            "Snow",
+            "Rally",
+            "Desert",
+            "Island",
+            "Bay",
+            "Coast"
+          ]
+        },
+        "mood": {
+          "type": "string",
+          "enum": [
+            "Sunrise",
+            "Day",
+            "Sunset",
+            "Night",
+            "Storm"
+          ]
+        },
+        "decoration": {
+          "type": "string"
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "description": "Benannte Sektionen für Dokumentation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "block_range": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "trap": {
+            "type": "string",
+            "description": "Versteckte Schwierigkeit in dieser Sektion"
+          }
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "integer"
+        },
+        "y": {
+          "type": "integer"
+        },
+        "z": {
+          "type": "integer"
+        },
+        "heading": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    "path": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "required": [
+          "seg"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "seg": {
+            "type": "string",
+            "enum": [
+              "start",
+              "straight",
+              "checkpoint",
+              "finish",
+              "curve_right",
+              "curve_left",
+              "slope_up",
+              "slope_down"
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4096
+          }
+        }
+      }
+    }
+  }
+}

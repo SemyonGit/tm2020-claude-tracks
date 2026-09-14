@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "name": "Calibration-Slope-W",
+    "author": "SemyonGit",
+    "category": "beginner",
+    "difficulty": 1,
+    "creativity": 1,
+    "generated_by": "Codex (OpenAI)",
+    "generated_at": "2026-09-14T00:00:00Z",
+    "description": "UNVERIFIED slope calibration. Do not use as proof of drivability."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day"
+  },
+  "blocks": [
+    {
+      "id": "StadiumRoadMainStart",
+      "x": 24,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 23,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 22,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainSlope1Up",
+      "x": 21,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 2,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 19,
+      "y": 2,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCheckpointIn",
+      "x": 18,
+      "y": 2,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainSlope1Down",
+      "x": 17,
+      "y": 2,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 16,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 15,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainFinish",
+      "x": 14,
+      "y": 1,
+      "z": 24,
+      "rotation": 3,
+      "flags": 0
+    }
+  ],
+  "checkpoints": [
+    6
+  ],
+  "sections": []
+}

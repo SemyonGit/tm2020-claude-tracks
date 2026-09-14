@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "name": "Calibration-Slope-W",
+    "author": "SemyonGit",
+    "category": "beginner",
+    "difficulty": 1,
+    "creativity": 1,
+    "generated_by": "Codex (OpenAI)",
+    "generated_at": "2026-09-14T00:00:00Z",
+    "description": "UNVERIFIED slope calibration. Do not use as proof of drivability."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day"
+  },
+  "origin": {
+    "x": 24,
+    "y": 1,
+    "z": 24,
+    "heading": 3
+  },
+  "path": [
+    {
+      "seg": "start"
+    },
+    {
+      "seg": "straight",
+      "count": 2
+    },
+    {
+      "seg": "slope_up"
+    },
+    {
+      "seg": "straight",
+      "count": 2
+    },
+    {
+      "seg": "checkpoint"
+    },
+    {
+      "seg": "slope_down"
+    },
+    {
+      "seg": "straight",
+      "count": 2
+    },
+    {
+      "seg": "finish"
+    }
+  ]
+}

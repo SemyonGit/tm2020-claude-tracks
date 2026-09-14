@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "name": "Calibration-Flat-Turns",
+    "author": "SemyonGit",
+    "category": "beginner",
+    "difficulty": 1,
+    "creativity": 1,
+    "generated_by": "Codex (OpenAI)",
+    "generated_at": "2026-09-14T00:00:00Z",
+    "description": "Flat regression course with both left and right curves. Current in-game check pending."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day"
+  },
+  "origin": {
+    "x": 10,
+    "y": 1,
+    "z": 10,
+    "heading": 1
+  },
+  "path": [
+    {
+      "seg": "start"
+    },
+    {
+      "seg": "straight",
+      "count": 3
+    },
+    {
+      "seg": "curve_right"
+    },
+    {
+      "seg": "straight",
+      "count": 2
+    },
+    {
+      "seg": "checkpoint"
+    },
+    {
+      "seg": "curve_left"
+    },
+    {
+      "seg": "straight",
+      "count": 3
+    },
+    {
+      "seg": "curve_left"
+    },
+    {
+      "seg": "straight",
+      "count": 2
+    },
+    {
+      "seg": "checkpoint"
+    },
+    {
+      "seg": "curve_right"
+    },
+    {
+      "seg": "straight",
+      "count": 2
+    },
+    {
+      "seg": "finish"
+    }
+  ]
+}
