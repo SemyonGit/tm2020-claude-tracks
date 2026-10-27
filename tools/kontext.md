@@ -1,3 +1,11 @@
+## 2026-10-27 — Planning moved to GitHub
+
+- `docs/ROADMAP.md`: goal, architecture, phases 0–5, decisions, risks.
+- Issues #2–#20, labels: `phase-N`, `track:{pipeline,physics,vocabulary,design}`,
+  `where:{home,anywhere}`, `needs-ingame-test`, `bug`, `decision`, `epic`.
+- Next home session: #2 → #3 → #4 → #5. Next away session: #9 (download running), #10, #14.
+
+---
 ## 2026-10-27 — Kacky corpus + jump extraction
 
 ### Sources (all public, no login)
