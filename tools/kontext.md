@@ -1,3 +1,23 @@
+## 2026-10-27 — Physics spike: replay telemetry is readable ✅
+
+- GBX.NET 2.4.5 (+ GBX.NET.LZO, GBX.NET.ZLib) parses TM2020 `.Ghost.Gbx` and `.Replay.Gbx`
+  record data: `ghost.RecordData.EntList[*].Samples` → `CSceneVehicleVis.EntRecordDelta`.
+- Per sample (every **50 ms**): time, position (world units, 32/block), rotation, velocity,
+  speed, steer, gas, brake, gear, rpm, ground mode, per-wheel ice/dirt, turbo.
+- Tested on GBX.NET's own TM2020 sample ghost + replay (GitHub). No TMX data yet.
+- First number: free-fall segment (0.75 s, ground mode 0) → vertical accel ≈ **−20.9 m/s²**
+  (~2.1 g). ONE sample, noisy (per-step −14..−26). Not a constant yet.
+- Tool: `tools/ghost_probe/` (`dotnet run -- <file.Gbx>` → CSV of samples). Needs .NET 10.
+- Blocker: trackmania.exchange is denied by this cloud environment's network policy →
+  allowlist `trackmania.exchange` (and `trackmania.io` if needed) or run downloads locally.
+
+### Next (physics track)
+1. Allowlist TMX → download ~50 Kacky maps + WR replays.
+2. Extract all airborne segments → fit gravity + drag; check vs ground mode values.
+3. Pair trajectories with map blocks (map UID in ghost) → launch/landing table.
+
+---
+
 ## 2026-10-27 — External bridges analyzed (tm2020-mcp, tm-control-mcp)
 
 ### Discoveries
