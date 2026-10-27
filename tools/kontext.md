@@ -1,3 +1,33 @@
+## 2026-10-27 — Kacky corpus + jump extraction
+
+### Sources (all public, no login)
+- `api.kacky.gg/v1/events?limit=500` → events (KR1–7 = Kacky Reloaded, KX1–4 = Kackiest Kacky X, TM2020).
+  `/v1/events/{id}/maps?limit=1000` → map UIDs (75 per edition; default page = 25!).
+- `trackmania.io/api/map/{uid}` → `fileUrl` (Nadeo core, map download).
+- `trackmania.io/api/leaderboard/map/{uid}?offset=0&length=N` → tops with ghost `url`
+  (`/api/download/ghost/{id}`). Send a descriptive User-Agent.
+- `tools/physics/download_kacky.py <dir> [ghosts_per_map]` does all of it, resumable.
+
+### Coordinate frame (measured, 5/5 grid-start maps)
+- Ghost world pos = grid block corner (gx*32, (gy-8)*8, gz*32) + (16, ~2, 16) at spawn.
+  → the converter's Y_OFFSET=8 confirmed independently.
+- Free blocks / items: already world metres.
+- `ghost_probe map <dir> <out>` exports blocks+free+items per map in that frame.
+
+### Jump extraction (`tools/physics/jumps.py`)
+- Jump = ≥4 airborne samples. Takeoff/landing = block under last/first ground sample.
+- Lookup order: block in same cell → nearest multi-cell block origin within 2 cells →
+  free block/item within 24 m → `OutsideMap` (beyond 48×48 grid) → `StadiumGround` (y<14) → `?`.
+- Snapshot (12 maps, 54 ghosts, 230 jumps): 2 unknown (<1%).
+- Finding: KR#8 / KR#10 jumps launch off **stadium scenery outside the grid** (76 of 230) —
+  not in the map file at all, so not reproducible by placing blocks.
+- Kacky maps drive on the baked stadium floor (`Grass`) too → `StadiumGround`.
+
+### Corrections
+- Turbo byte: value 128 at the very start of a WR run → "0x80 = turbo" is probably wrong too.
+  Turbo semantics unknown; air fit excludes 0x80 samples (small effect).
+
+---
 ## 2026-10-27 — Physics model v1: gravity + air drag fitted from 253 TMX replays ✅
 
 ### Pipeline (all offline, no game needed — works from work PC / cloud)
