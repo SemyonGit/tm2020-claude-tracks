@@ -1,3 +1,34 @@
+## 2026-10-27 — Physics model v1: gravity + air drag fitted from 253 TMX replays ✅
+
+### Pipeline (all offline, no game needed — works from work PC / cloud)
+1. `tools/physics/download_tmx.py <dir>` → maps + replays from trackmania.exchange
+2. `dotnet run --project tools/ghost_probe -- <dir>/replays <dir>/telemetry` → CSV per ghost
+   (20 Hz: pos, rot, vel, inputs, ground contact, wheel materials, suspension, car model)
+3. `tools/physics/fit_air.py <telemetry>` → gravity/drag fit, per car
+4. `tools/physics/validate.py <telemetry>` → replays each flight through the model
+5. `tools/physics/jump.py <kmh> [deg] [drop_blocks] [car]` → airtime, distance, peak, landing
+
+### Results (253 replays, 864 airborne segments, 466 clean)
+| Car | Gravity | Air drag (horizontal) |
+|---|---|---|
+| CarSport | −24.9 m/s² (IQR −26.1..−24.3, n=311) | −1.2 @<150, −1.8 @150–250, −2.6 @250–350, −3.3 @>350 km/h |
+| CarSnow/Rally/Desert | −40.8 m/s² (n=155) | ≈0 (−0.0..−0.7) |
+Validation (in-sample): CarSport median end error 0.73 m over 0.8 s flights (~2%), p90 8.3 m.
+Rally/Snow 0.25 m. Long flights under-represented; air control/rotation not modelled.
+
+### Format facts
+- Air detection: `IsGroundContact`; wheel materials keep last value in air (useless for that).
+- Turbo byte: GBX.NET mask 0x82 flags ~80% of air samples → only 0x80 treated as turbo (assumption).
+- `sim_coef` 255 = normal speed; other values = slow-mo.
+- Block = 32 m horizontal, 8 m vertical.
+- Only 23 of 1500 Kacky-tagged TMX maps have replays → Kacky-specific data is thin.
+
+### Next (physics)
+- Pair trajectories with map blocks (map UID → parsed map) → launch-block/landing table.
+- Model ground acceleration per surface (tech, dirt, ice, plastic, grass).
+- Hold-out validation + long-flight (>1.5 s) check.
+
+---
 ## 2026-10-27 — Physics spike: replay telemetry is readable ✅
 
 - GBX.NET 2.4.5 (+ GBX.NET.LZO, GBX.NET.ZLib) parses TM2020 `.Ghost.Gbx` and `.Replay.Gbx`

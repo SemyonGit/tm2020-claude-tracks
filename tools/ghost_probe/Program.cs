@@ -1,35 +1,89 @@
+// Export TM2020 ghost/replay telemetry to CSV.
+// Usage: dotnet run -- <file-or-dir> [<out-dir>]
+//   file  → prints CSV to stdout
+//   dir   → one CSV per *.Replay.Gbx / *.Ghost.Gbx into out-dir (default: ./telemetry)
 using GBX.NET;
 using GBX.NET.Engines.Game;
 using GBX.NET.Engines.Scene;
 using GBX.NET.LZO;
 using GBX.NET.ZLib;
+using System.Globalization;
 
 Gbx.LZO = new Lzo();
 Gbx.ZLib = new ZLib();
-foreach (var path in args)
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+
+const string Header =
+    "t_ms,x,y,z,qx,qy,qz,qw,vx,vy,vz,speed_kmh,steer,gas,brake,gear,rpm," +
+    "ground,fl_mat,fr_mat,rl_mat,rr_mat,fl_damp,fr_damp,rl_damp,rr_damp,turbo,sim_coef,wetness";
+
+if (args.Length == 0) { Console.Error.WriteLine("usage: <file-or-dir> [out-dir]"); return 1; }
+
+if (File.Exists(args[0]))
 {
-    Console.WriteLine($"== {Path.GetFileName(path)}");
+    foreach (var (_, rows) in Extract(args[0])) { Console.WriteLine(Header); rows.ForEach(Console.WriteLine); }
+    return 0;
+}
+
+var outDir = args.Length > 1 ? args[1] : "telemetry";
+Directory.CreateDirectory(outDir);
+int ok = 0, fail = 0;
+var meta = new List<string> { "file,ghost,map_uid,login,race_ms,samples,vehicle" };
+foreach (var path in Directory.EnumerateFiles(args[0]).Where(p =>
+             p.EndsWith(".Replay.Gbx", StringComparison.OrdinalIgnoreCase) ||
+             p.EndsWith(".Ghost.Gbx", StringComparison.OrdinalIgnoreCase)))
+{
+    try
+    {
+        var i = 0;
+        foreach (var (g, rows) in Extract(path))
+        {
+            var name = $"{Path.GetFileName(path).Split('.')[0]}_{i++}.csv";
+            File.WriteAllLines(Path.Combine(outDir, name), rows.Prepend(Header));
+            meta.Add($"{name},{i - 1},{g.Validate_ChallengeUid},{g.GhostLogin},{g.RaceTime?.TotalMilliseconds},{rows.Count},{g.PlayerModel?.Id}");
+        }
+        ok++;
+    }
+    catch (Exception e) { fail++; Console.Error.WriteLine($"FAIL {Path.GetFileName(path)}: {e.GetType().Name}: {e.Message}"); }
+}
+File.WriteAllLines(Path.Combine(outDir, "_index.csv"), meta);
+Console.WriteLine($"parsed {ok}, failed {fail}, ghosts {meta.Count - 1}");
+return 0;
+
+static IEnumerable<(CGameCtnGhost, List<string>)> Extract(string path)
+{
     var node = Gbx.ParseNode(path);
     var ghosts = node switch
     {
-        CGameCtnGhost g => new[] { g },
+        CGameCtnGhost g => [g],
         CGameCtnReplayRecord r => r.GetGhosts().ToArray(),
-        _ => []
+        _ => Array.Empty<CGameCtnGhost>()
     };
-    Console.WriteLine($"type={node?.GetType().Name} ghosts={ghosts.Length}");
     foreach (var g in ghosts)
     {
-        Console.WriteLine($"ghost: login={g.GhostLogin} time={g.RaceTime} map={g.Validate_ChallengeUid} rec={g.RecordData is not null}");
         if (g.RecordData is null) continue;
-        foreach (var e in g.RecordData.EntList)
-        {
-            var vis = e.Samples.OfType<CSceneVehicleVis.EntRecordDelta>().ToList();
-            Console.WriteLine($" ent type={e.Type} samples={e.Samples.Count} vehicleVis={vis.Count}");
-            if (vis.Count == 0) continue;
-            Console.WriteLine($" dt first: {(vis[1].Time - vis[0].Time).TotalMilliseconds} ms");
-            Console.WriteLine("  t_ms,x,y,z,vx,vy,vz,speed_kmh,steer,gas,brake,groundmode");
-            foreach (var s in vis)
-                Console.WriteLine($"  {s.Time.TotalMilliseconds},{s.Position.X:F2},{s.Position.Y:F2},{s.Position.Z:F2},{s.Velocity.X:F2},{s.Velocity.Y:F2},{s.Velocity.Z:F2},{s.Speed:F1},{s.Steer:F2},{s.Gas:F2},{s.Brake:F2},{((GBX.NET.Engines.Scene.CSceneVehicleVis.IEntRecordDeltaRawData)s).GroundMode}");
-        }
+        var samples = g.RecordData.EntList
+            .Select(e => e.Samples.OfType<CSceneVehicleVis.EntRecordDelta>().ToList())
+            .OrderByDescending(s => s.Count)
+            .FirstOrDefault();
+        if (samples is null || samples.Count == 0) continue;
+        yield return (g, samples.Select(Row).ToList());
     }
+}
+
+static string Row(CSceneVehicleVis.EntRecordDelta s)
+{
+    var raw = (CSceneVehicleVis.IEntRecordDeltaRawData)s;
+    return string.Join(",",
+        s.Time.TotalMilliseconds,
+        s.Position.X, s.Position.Y, s.Position.Z,
+        s.Rotation.X, s.Rotation.Y, s.Rotation.Z, s.Rotation.W,
+        s.Velocity.X, s.Velocity.Y, s.Velocity.Z,
+        s.Speed, s.Steer, s.Gas, s.Brake, s.Gear, s.RPM,
+        s.IsGroundContact ? 1 : 0,
+        (int)s.FLGroundContactMaterial, (int)s.FRGroundContactMaterial,
+        (int)s.RLGroundContactMaterial, (int)s.RRGroundContactMaterial,
+        s.FLDampenLen, s.FRDampenLen, s.RLDampenLen, s.RRDampenLen,
+        raw.IsTurbo, raw.SimulationTimeCoef, s.WetnessValue);
 }
