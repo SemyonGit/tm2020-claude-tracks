@@ -1,3 +1,34 @@
+## 2026-10-27 — External bridges analyzed (tm2020-mcp, tm-control-mcp)
+
+### Discoveries
+- **kacky-code/tm2020-mcp**: .NET MCP server + Openplanet plugin (127.0.0.1:29100).
+  Offline via GBX.NET (no game): `inspect_map_gbx`, `verify_map_track` (start→finish
+  connectivity proof), `analyze_map_block_directions`, `learn_map_motif`,
+  `write_free_blocks`. Live: `create_map`, grid place/remove, `stamp_map_motif`
+  (loops, reset curtains), `generate_track_plan`. Needs Club Access (Dev Mode).
+- **clankercode/tm-control-mcp**: Openplanet plugin, TCP JSON on 30006 via `tools/call.py`
+  (not a stdio MCP server). 104 tools: EditNewMap, PlaceBlock, GetBlocks, SaveMapAs,
+  PlayMap, TakeScreenshot, GetVehicleState, GetRaceData; free blocks via E++ pack.
+  Needs MLHook + MLFeedRaceData.
+- Neither models car physics → jumps/Kacky tricks stay user-verified.
+- Measured (450 Kacky maps): RoadTech forward North=+Z, South=-Z, **East=-X, West=+X**.
+
+### Suspected bug (unverified, test first)
+`tm2020_dir()` flips Start/Finish 180° for all headings. Against the measured table that
+is only correct for JSON headings E/W (the only ones tested, proofcut uses heading 1).
+Prediction: a Start/Finish with JSON heading N or S faces backwards. Likely correct
+rule: Start/Finish dir = DIR_NAMES[(rot+2)%4] for all rot (= current result for E/W,
+flipped for N/S). Test: compose a track with origin heading 0, check spawn direction.
+
+### New file
+- `tools/claude_project_prompt.md` — system prompt for the Claude Project (designer role).
+
+### Next
+1. Test N/S start facing (above). 2. Install tm2020-mcp, run `verify_map_track` on
+proofcut.Map.Gbx as an independent oracle. 3. Slope test track.
+
+---
+
 ## 2026-06-01 — Connector layer added, converter made fail-loud
 
 ### What changed
