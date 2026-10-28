@@ -15,6 +15,7 @@ def validate(track: dict) -> list[str]:
     if not blocks:
         return ["no blocks"]
 
+    jumps = {j["before_block"]: j for j in track.get("jumps", [])}
     occupied: dict[tuple[int, int, int], int] = {}
     cursor = (blocks[0]["x"], blocks[0]["y"], blocks[0]["z"])
     heading = blocks[0].get("rotation", 0) & 3
@@ -24,6 +25,10 @@ def validate(track: dict) -> list[str]:
         if cell in occupied:
             problems.append(f"[{i}] overlap: cell {cell} already used by block {occupied[cell]}")
         occupied[cell] = i
+        if i in jumps:  # declared gap: cursor skips `cells` cells and drops `drop` layers
+            j = jumps[i]
+            dx, _, dz = HEADING_VEC[heading]
+            cursor = (cursor[0] + dx * j["cells"], cursor[1] - j["drop"], cursor[2] + dz * j["cells"])
         if cell != cursor:
             problems.append(f"[{i}] gap: block at {cell} but path expected {cursor}")
             cursor = cell  # resync so we report one gap, not a cascade
@@ -35,6 +40,9 @@ def validate(track: dict) -> list[str]:
         problems.append("must have exactly one Start block")
     if sum("Finish" in x for x in ids) != 1:
         problems.append("must have exactly one Finish block")
+    for j in track.get("jumps", []):
+        if not (0 < j["before_block"] < len(blocks)):
+            problems.append(f"jump before block {j['before_block']} out of range")
     for c in track.get("checkpoints", []):
         if not (0 <= c < len(blocks)):
             problems.append(f"checkpoint index {c} out of range")

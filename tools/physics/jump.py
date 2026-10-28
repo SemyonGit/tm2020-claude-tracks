@@ -50,7 +50,7 @@ def simulate(kmh, deg=0.0, drop_blocks=0.0, car="CarSport", dt=0.001):
         if vy < 0 and y <= target:
             return {"airtime_s": t, "distance_m": x, "distance_blocks": x / BLOCK_XZ,
                     "peak_m": peak, "peak_blocks": peak / BLOCK_Y,
-                    "landing_kmh": math.hypot(vh, vy) * 3.6}
+                    "landing_kmh": math.hypot(vh, vy) * 3.6, "landing_h_kmh": vh * 3.6}
         if t > 30:
             raise RuntimeError("no landing within 30 s")
 

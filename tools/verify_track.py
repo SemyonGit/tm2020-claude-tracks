@@ -59,8 +59,11 @@ def verify(path, shapes):
     return verify_blocks(find_blocks_chunk(parse_file(str(path))).Blocks, shapes)
 
 
-def verify_blocks(blocks, shapes):
-    """blocks: gbxpy block containers (name, dir, coords)."""
+def verify_blocks(blocks, shapes, jumps=None):
+    """blocks: gbxpy block containers (name, dir, coords).
+    jumps: {takeoff_cell: landing_cell} for declared gaps (track["jumps"]); the walk
+    may cross those, and the landing block must open back toward the takeoff."""
+    jumps = jumps or {}
     cells, notes = {}, []
     for b in blocks:
         c = (int(b.coords.x), int(b.coords.y), int(b.coords.z))
@@ -83,6 +86,17 @@ def verify_blocks(blocks, shapes):
         if not nxt:
             return False, notes + [f"{name} at {cur}: dead end"]
         n = nxt[0]
+        if n not in cells and cur in jumps:
+            land = jumps[cur]
+            step = (n[0] - cur[0], n[2] - cur[2])  # unit travel vector at takeoff
+            back, _ = exits_of(shapes, *cells[land]) if land in cells else (None, None)
+            if land not in cells or back is None or (-step[0], -step[1]) not in back:
+                return False, notes + [f"jump from {cur}: no landing block facing back at {land}"]
+            notes.append(f"jump {cur} → {land}")
+            prev, cur, steps = cur, land, steps + 1
+            # pretend we arrived from the adjacent cell so the walk continues forward
+            prev = (land[0] - step[0], land[1], land[2] - step[1])
+            continue
         if n not in cells:
             return False, notes + [f"{name} {d} at {cur} exits to {n}, which is empty"]
         back, _ = exits_of(shapes, *cells[n])

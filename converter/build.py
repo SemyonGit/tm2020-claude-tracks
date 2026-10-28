@@ -637,7 +637,10 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
         # Independent check: walk start→finish with block shapes learned from real maps.
         sys.path.insert(0, str(ROOT.parent / "tools"))
         from verify_track import load_shapes, verify_blocks  # noqa: E402
-        ok, notes = verify_blocks(block_instances, load_shapes())
+        cell = lambda b: (int(b.coords.x), int(b.coords.y), int(b.coords.z))
+        jumps = {cell(block_instances[j["before_block"] - 1]): cell(block_instances[j["before_block"]])
+                 for j in track.get("jumps", [])}
+        ok, notes = verify_blocks(block_instances, load_shapes(), jumps)
         print(f"{'🔗' if ok else '❌'} verify_track: {notes[-1]}")
         if not ok and not force:
             print("   Not deploying a disconnected track (use --force to override).")
