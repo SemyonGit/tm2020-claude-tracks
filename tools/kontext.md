@@ -23,7 +23,7 @@ predicted before it is built (issue #20).
 | Ground acceleration per surface | ✅ Asphalt/Dirt/Ice/Grass; ❌ Plastic | `tools/physics/ground.py` |
 | Kacky jump table | ✅ 17,407 jumps | `docs/jump_table.md` |
 | Declared jumps (`gap` segment) + predictions | ✅ composer/validator/verify; ⏳ drive Drop Test (#19) | `tools/physics/plan_jumps.py`, `check_drive.py` |
-| Learned block shapes (footprint + exits) | 🔧 1-cell good, multi-cell partly | `track_lib/data/learned_blocks.json` |
+| Learned block shapes (footprint + exits) | ✅ 1-cell (pooled over 4 dirs); ❌ multi-cell unreliable (#15) | `track_lib/data/learned_blocks.json` (1,322 maps) |
 | Live editor bridges (tm2020-mcp, tm-control-mcp) | ⬜ not installed yet (#2) | home PC |
 
 ## Verified blocks (composer segments)
@@ -88,7 +88,9 @@ slope_up / slope_down: unverified (#5).
 - Map header author = template creator's account (zone "World|Asia|Bhutan").
 - `tracks/speedtech/silvercut/Silvercut.Map.Gbx` is a stale build with no start block;
   its JSON uses placeholder blocks and refuses to build.
-- Multi-cell footprints are inconsistent across directions for some blocks (#15).
+- Multi-cell footprints (Curve2–5, chicanes) are inconsistent across directions: the
+  origin-occupancy method is too noisy for them (more maps didn't help). Next idea: read the
+  real unit lists from the game's BlockInfo via the Openplanet bridge (#15).
 
 ## Next
 - Home: #2 install bridges → #3 smoke test → drive Compass (#4, #21) → #5 slopes.
