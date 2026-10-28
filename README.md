@@ -4,7 +4,7 @@
 The end goal is a [Kacky](https://kacky.gg) map: brutally hard, every obstacle intentional,
 and every jump predicted *before* it's built.
 
-Nothing here is guessed when it can be measured. Block geometry comes from 740 real maps.
+Nothing here is guessed when it can be measured. Block geometry comes from 1,322 real maps (official Kacky + trackmania.exchange).
 Car physics comes from **3,943 replays** (official Kacky world records + trackmania.exchange),
 parsed sample by sample.
 
@@ -13,7 +13,7 @@ parsed sample by sample.
 | 🧪 Physics model | gravity, air drag, per-surface acceleration, validated on maps it never saw |
 | 📐 Jump predictor | short jumps land within **0.7 m** of the real replay (median) |
 | 🗺️ Kacky jump table | **17,407** world-record jumps, by takeoff block |
-| 🧱 Block shapes | footprints + connections for **2,415** block/direction pairs, learned from real maps |
+| 🧱 Block shapes | footprints + connections for **3,609** block/direction pairs, learned from 1,322 real maps |
 | ✅ Track checker | every build is walked start → finish before it reaches the game |
 | 🏁 Tracks | [Proofcut](tracks/speedtech/proofcut), [Compass](tracks/beginner/compass), [Drop Test](tracks/stunts/droptest) (first physics-sized jumps) |
 

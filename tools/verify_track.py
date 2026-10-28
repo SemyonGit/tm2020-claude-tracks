@@ -5,7 +5,8 @@ Walks the grid from the start block using block shapes LEARNED from real maps
 independent check of build.py. One-cell blocks only for now; a direction that wasn't
 learned is derived by rotating a learned one. Unknown blocks are reported, not guessed.
 
-Usage: python tools/verify_track.py <file.Map.Gbx> [...]
+Usage: python tools/verify_track.py <file.Map.Gbx> [...] [--track track.json]
+  --track: take declared jumps (track["jumps"]) from the track JSON the map was built from
 Exit code 0 = all connected.
 """
 import json, sys
@@ -107,10 +108,27 @@ def verify_blocks(blocks, shapes, jumps=None):
             return False, notes + ["loop without finish"]
 
 
-def main(paths):
+def jumps_from_track(track_path):
+    """{takeoff_cell: landing_cell} in GBX grid coords from a track JSON (Y_OFFSET = 8)."""
+    track = json.load(open(track_path, encoding="utf-8"))
+    b = track["blocks"]
+    cell = lambda i: (b[i]["x"], b[i]["y"] + 8, b[i]["z"])
+    return {cell(j["before_block"] - 1): cell(j["before_block"]) for j in track.get("jumps", [])}
+
+
+def main(args):
+    jumps = {}
+    if "--track" in args:
+        i = args.index("--track")
+        jumps = jumps_from_track(args[i + 1])
+        args = args[:i] + args[i + 2:]
+    # vendored gbxpy leaves a ZipFile for the GC when several maps are parsed in one
+    # process; its harmless close() error would otherwise spam stderr
+    default_hook = sys.unraisablehook
+    sys.unraisablehook = lambda u: None if "ZipFile.__del__" in repr(u.object) else default_hook(u)
     shapes, ok_all = load_shapes(), True
-    for p in paths:
-        ok, notes = verify(Path(p), shapes)
+    for p in args:
+        ok, notes = verify_blocks(find_blocks_chunk(parse_file(str(p))).Blocks, shapes, jumps)
         ok_all &= ok
         print(f"{'✅' if ok else '❌'} {Path(p).name}")
         for n in dict.fromkeys(notes):
