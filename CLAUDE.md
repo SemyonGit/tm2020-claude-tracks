@@ -1,88 +1,89 @@
 # TM2020 Claude Tracks – Claude Code Context
 
 ## Project
-Growing library of AI-generated TM2020 tracks across 10 categories.
-Claude (Web) designs tracks as JSON. Claude Code converts, commits, and deploys.
+AI-designed Trackmania 2020 tracks across 10 categories, building toward a Kacky map
+(brutally hard, every jump predicted before it's built).
+
+**Start every session by reading `tools/kontext.md`** (current state). Plans and decisions:
+`docs/ROADMAP.md`. Tasks: GitHub Issues (labels `where:home` / `where:anywhere`).
 
 ## Roles
-- **Claude Web (claude.ai):** creative design, JSON generation, SVG preview — never executed here
-- **Claude Code (this session):** convert, fix bugs, commit, deploy — never design tracks
-- **User:** saves JSON from Claude Web to the correct folder, reviews results in TM2020
+- **Claude Code** designs, composes, builds, verifies, analyses data, commits. One session
+  can do the whole loop. Designs only use verified blocks and must come with a test plan.
+- **Claude Project (claude.ai)**, optional: brainstorming and concepts.
+  Prompt: `tools/claude_project_prompt.md`.
+- **User**: test drives in TM2020 (the final word on anything physical), reference maps,
+  `where:home` tasks.
+
+Never claim something works in-game until the user has driven it. Measured beats assumed:
+check `tools/kontext.md` facts before reasoning about directions or physics.
 
 ## Stack
-- Python 3.12 — always use `py -3.12`
-- Always prefix Python commands with: `$env:PYTHONIOENCODING = "utf-8"`
-- gbx-py vendored in `converter/gbxpy/` (source: schadocalex/gbx-py)
-- `construct` library (`pip install construct`)
-- Claude Code Opus 4.7 in VSCode
+- Python 3.12 on Windows: `py -3.12`, prefix PowerShell with `$env:PYTHONIOENCODING = "utf-8"`
+  (Linux/cloud: `python3`)
+- Python deps: `pip install construct gbx-py pytest numpy` (`gbx-py` only provides LZO; the
+  parser is vendored in `converter/gbxpy/`)
+- .NET 10 SDK for `tools/ghost_probe/` (GBX.NET: ghost telemetry + map export)
 
-## Key Paths
+## Key paths
 ```
-tools/track_schema.json          → JSON schema for all track files
-converter/build.py               → JSON → .Map.Gbx converter
-converter/gbxpy/                 → vendored gbx-py library
-converter/template.Map.Gbx       → empty TM2020 map used as build base
-tracks/{category}/{name}/        → one folder per track
-  {name}.json                    → Claude-generated track data
-  {name}.Map.Gbx                 → built game file
-  {name}_preview.svg             → layout preview (optional)
-```
-
-## TM2020 Maps Folder (Windows)
-```
-C:/Users/semyo/Documents/Trackmania/Maps/My Maps/
-```
-
-## Reference Maps for Parsing
-```
-C:/Users/semyo/Documents/Trackmania/Maps/My Maps/jantronix wurst.Map.Gbx   (291 blocks)
-C:/Users/semyo/Documents/Trackmania/Maps/My Maps/test_kurven.Map.Gbx        (13 blocks, S-curve reference)
-C:/Users/semyo/Documents/Trackmania/Maps/Downloaded/every platform block.Map.Gbx
+compose.py, track_lib/               design path → connected block list
+track_lib/data/learned_blocks.json   block footprints/exits learned from 740 real maps
+converter/build.py                   JSON → .Map.Gbx, then verify_track, then deploy
+converter/template.Map.Gbx           empty map used as build base
+tools/verify_track.py                offline start→finish check (learned shapes)
+tools/ghost_probe/                   C#: replays → CSV telemetry, maps → block CSV
+tools/physics/                       air + ground model, jump table, downloaders
+tools/vocab/                         block-shape learner, TMX map downloader
+tools/track_schema.json              JSON schema (stable)
+tests/                               pytest: directions + verifier regression
+tracks/{category}/{name}/            {name}.design.json, {name}.json, {Name}.Map.Gbx
+docs/                                ROADMAP, jump table, session log
 ```
 
-## Workflow
-1. Validate JSON against `tools/track_schema.json`
-2. Run `converter/build.py` → `.Map.Gbx`
-3. `git add + commit + push`
-4. `.Map.Gbx` auto-deployed to TM2020 Maps folder by converter
+## Workflow: a new track
+1. Write `tracks/{category}/{name}/{name}.design.json` (segment path, verified segments only)
+2. `py -3.12 compose.py tracks/.../{name}.design.json`
+3. `py -3.12 converter/build.py tracks/.../{name}.json` → builds, runs verify_track, deploys
+   to `C:/Users/semyo/Documents/Trackmania/Maps/My Maps/`
+4. For jumps: size them with `tools/physics/jump.py` / `ground.py`; list the predictions
+   in the test plan
+5. Commit, push; label the issue `needs-ingame-test` until the user has driven it
 
-## Commit Format
+## Workflow: physics / data
+```
+python tools/physics/download_kacky.py <dir>                                # or download_tmx.py
+dotnet run --project tools/ghost_probe -- <dir>/replays <dir>/telemetry     # ghosts → CSV
+dotnet run --project tools/ghost_probe -- map <dir>/maps <dir>/blocks       # maps → CSV
+python tools/physics/holdout.py <telemetry>...                              # air fit + validation
+python tools/physics/fit_ground.py tools/physics/ground_table.json <telemetry>...
+python tools/physics/jumps.py <telemetry> <blocks> jumps.csv && python tools/physics/jump_table.py jumps.csv docs/jump_table.md
+python tools/vocab/learn_blocks.py <blocks> track_lib/data/learned_blocks.json 15
+```
+Corpora live outside the repo (≈2 GB). Commit scripts and derived tables, not raw data.
+
+## Before pushing
+`py -3.12 -m pytest tests` must pass.
+
+## Commit format
 ```
 🏎️ Add {name} ({category} | D{difficulty}/5 | C{creativity}/5)
+🔧 Fix …   🔬 Physics/data …   🧱 Block vocabulary …   ✅ Tests/verification …   📝 Docs …
 ```
 
 ## Categories
 speedtech, fullspeed, tech, dirt, rally, stunts, ice, fun, lol, beginner
 
-## Current Pipeline Status
-- JSON → .Map.Gbx loads in TM2020 ✅
-- Block names verified: `RoadTech*` prefix (no `Stadium` prefix) ✅
-- Y_OFFSET=8 confirmed correct (JSON y=1 → GBX y=9) ✅
-- Chunks 0x03043062/68/69 dropped before writing (block-count dependent) ✅
-- Block placement / rotations: fix in progress (test_kurven.Map.Gbx is ground-truth reference)
+## JSON rotation convention
+0 = North (travel −z), 1 = East (+x), 2 = South (+z), 3 = West (−x).
+The mapping to TM2020 dirs lives in `converter/build.py` and is tested in `tests/test_directions.py`.
 
-## JSON Rotation Convention
-- 0 = North, 1 = East, 2 = South, 3 = West
+## Never modify
+- `tools/track_schema.json`: the schema stays stable
 
-## Never Modify (Claude Web only)
-- `tools/track_schema.json` — schema stays stable
-
-## Cross-Session Continuity
-After EVERY session where something changed (new fix, new discovery, new block mapping,
-pipeline change, anything relevant):
-
-Update `tools/kontext.md` to reflect the latest project state.
-This file is the single source of truth for cross-session continuity.
-It is read at the start of every new Claude Code session.
-
-Always include in kontext.md:
-- Current pipeline status (what works, what doesn't)
-- Latest BLOCK_MAP
-- Latest fixes and discoveries
-- Current known issues
-- Next steps
-
-After updating kontext.md always commit:
+## Cross-session continuity
+After every session where something changed, update `tools/kontext.md` (current state only;
+move anything historical to `docs/log/sessions.md`) and commit:
 ```
 git add tools/kontext.md && git commit -m "📝 Update kontext.md"
 ```

@@ -1,0 +1,7 @@
+"""TM2020 surface MaterialId (index = value in ghost samples), from GBX.NET CPlugSurface.chunkl."""
+MATERIALS = ['Concrete', 'Pavement', 'Grass', 'Ice', 'Metal', 'Sand', 'Dirt', 'Turbo_Deprecated', 'DirtRoad', 'Rubber', 'SlidingRubber', 'Test', 'Rock', 'Water', 'Wood', 'Danger', 'Asphalt', 'WetDirtRoad', 'WetAsphalt', 'WetPavement', 'WetGrass', 'Snow', 'ResonantMetal', 'GolfBall', 'GolfWall', 'GolfGround', 'Turbo2_Deprecated', 'Bumper_Deprecated', 'NotCollidable', 'FreeWheeling_Deprecated', 'TurboRoulette_Deprecated', 'WallJump', 'MetalTrans', 'Stone', 'Player', 'Trunk', 'TechLaser', 'SlidingWood', 'PlayerOnly', 'Tech', 'TechArmor', 'TechSafe', 'OffZone', 'Bullet', 'TechHook', 'TechGround', 'TechWall', 'TechArrow', 'TechHook2', 'Forest', 'Wheat', 'TechTarget', 'PavementStair', 'TechTeleport', 'Energy', 'TechMagnetic', 'TurboTechMagnetic_Deprecated', 'Turbo2TechMagnetic_Deprecated', 'TurboWood_Deprecated', 'Turbo2Wood_Deprecated', 'FreeWheelingTechMagnetic_Deprecated', 'FreeWheelingWood_Deprecated', 'TechSuperMagnetic', 'TechNucleus', 'TechMagneticAccel', 'MetalFence', 'TechGravityChange', 'TechGravityReset', 'RubberBand', 'Gravel', 'Hack_NoGrip_Deprecated', 'Bumper2_Deprecated', 'NoSteering_Deprecated', 'NoBrakes_Deprecated', 'RoadIce', 'RoadSynthetic', 'Green', 'Plastic', 'DevDebug', 'Free3', 'XXX_Null']
+
+
+def material(i):
+    i = int(i)
+    return MATERIALS[i] if 0 <= i < len(MATERIALS) else f"#{i}"
