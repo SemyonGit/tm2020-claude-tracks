@@ -42,29 +42,31 @@ Three sources of truth, each measured rather than guessed:
 - #2 Both Openplanet bridges running on the home PC
 
 ### Phase 1 – Prove the basics
+Also new: #21 map UID/name per track (✅ in file, ⏳ drive Compass).
+
 | # | Task | Where |
 |---|---|---|
 | #3 | Bridge smoke test: game-built map, saved, verified | home |
-| #4 | Bug?: Start/Finish backwards on N/S headings | home |
+| #4 | Start/Finish backwards on N/S headings: ✅ fixed from data, ⏳ drive Compass | home |
 | #5 | Verify slopes | home |
-| #6 | Offline `verify_map_track` as a second check | anywhere |
-| #9 | Physics: full Kacky re-fit + hold-out validation | anywhere |
+| #6 | ✅ Offline start→finish verifier (`tools/verify_track.py`), runs after every build | anywhere |
+| #9 | ✅ Physics: full Kacky re-fit + hold-out validation | anywhere |
 
 ### Phase 2 – Restructure + measure
 | # | Task | Where |
 |---|---|---|
-| #7 | Rewrite CLAUDE.md for new roles, trim kontext.md | anywhere |
+| #7 | ✅ Rewrite CLAUDE.md for new roles, trim kontext.md | anywhere |
 | #8 | Decide: bridge-native building vs gbx-py | decision |
-| #10 | Kacky jump table | anywhere |
-| #11 | Ground model per surface | anywhere |
-| #14 | Learn block connections + motifs from Kacky corpus | anywhere |
-| #15 | Multi-cell block footprints | anywhere |
+| #10 | ✅ Kacky jump table | anywhere |
+| #11 | 🔧 Ground model per surface (Asphalt/Dirt/Ice/Grass done, Plastic open) | anywhere |
+| #14 | 🔧 Block connections learned from 1,322 maps (motifs open) | anywhere |
+| #15 | 🔧 Multi-cell footprints: corpus method too noisy → read BlockInfo in-game | home |
 
 ### Phase 3 – New mechanics
 | # | Task | Where |
 |---|---|---|
-| #12 | Air control | anywhere |
-| #13 | Decode turbo / ground-mode bytes | anywhere |
+| #12 | 🔧 Long-flight error was collisions, not air control (p90 31 → 10 m) | anywhere |
+| #13 | 🔧 0x80 = turbo confirmed; grip/slide bits hypothesised | anywhere |
 | #16 | Trick-surface track | home |
 | #17 | Motif track (loop + reset) | home |
 
@@ -72,7 +74,7 @@ Three sources of truth, each measured rather than guessed:
 | # | Task | Where |
 |---|---|---|
 | #18 | First free-block section | home |
-| #19 | 5-jump micro-gauntlet designed with jump.py | home |
+| #19 | 5-jump micro-gauntlet designed with jump.py: tooling ✅, Drop Test ⏳ drive | home |
 
 ### Phase 5 – The goal
 - #20 Kacky map
@@ -85,6 +87,9 @@ Three sources of truth, each measured rather than guessed:
 | 2026-10-27 | Physics from replay telemetry, not by decompiling the game | Legal, survives game updates, no game needed; first fit is ~2% median error |
 | 2026-10-27 | kacky.gg + trackmania.io as the Kacky data source | All official maps + top ghosts, public, no login |
 | 2026-10-27 | Jumps that use scenery outside the grid are excluded from design | Can't be placed or reproduced |
+| 2026-10-28 | Kacky ghosts are fine for physics constants | Same gravity as normal TMX maps; outliers were collisions, now filtered |
+| 2026-10-28 | Deliberate gaps are declared (`gap` segment → `track["jumps"]`) | Undeclared gaps stay errors; declared ones get a physics prediction + in-game check |
+| 2026-10-28 | Multi-cell block footprints come from the game, not the corpus | Origin-occupancy inference is inconsistent across directions for big blocks |
 
 ## Known risks
 
