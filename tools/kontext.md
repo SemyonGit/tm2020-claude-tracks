@@ -1,3 +1,15 @@
+## 2026-10-28 — Are Kacky ghosts biased? No. Long-flight error = mid-air collisions
+
+- `gmode` (raw ground-mode byte) added to telemetry CSV. Reactor bits 0x7C (reactor ground,
+  up, down, lvl1, lvl2): 5.7% of Kacky air samples, 3.9% TMX. Now excluded from free flight.
+- Kacky vs TMX long-flight error identical (p90 ~30 m both) → bugs/Kacky style not the cause.
+- Steering/brake in the air: no effect on error → air control not the cause (#12).
+- Cause: body collisions while wheels are airborne. 68% of bad long flights (>20 m error) have
+  a >60 m/s² accel spike vs 4% of good ones. `holdout.py` drops flights with such a spike.
+- After both filters: CarSport g = 25.08, long flights median 2.9 m, **p90 10.1 m** (was 31),
+  short flights median 0.66 m, p90 2.0 m. Constants updated in `jump.py`.
+
+---
 ## 2026-10-28 — #9 physics re-fit (hold-out) + #10 Kacky jump table ✅
 
 ### Corpus
