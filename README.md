@@ -15,7 +15,7 @@ parsed sample by sample.
 | 🗺️ Kacky jump table | **17,407** world-record jumps, by takeoff block |
 | 🧱 Block shapes | footprints + connections for **2,415** block/direction pairs, learned from real maps |
 | ✅ Track checker | every build is walked start → finish before it reaches the game |
-| 🏁 Tracks | [Proofcut](tracks/speedtech/proofcut), [Compass](tracks/beginner/compass) |
+| 🏁 Tracks | [Proofcut](tracks/speedtech/proofcut), [Compass](tracks/beginner/compass), [Drop Test](tracks/stunts/droptest) (first physics-sized jumps) |
 
 Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md) · Tasks: [Issues](https://github.com/SemyonGit/tm2020-claude-tracks/issues)
 
@@ -80,6 +80,11 @@ python tools/physics/jump.py 300 15
 # How fast am I after 10 blocks of full gas on dirt?
 python tools/physics/ground.py 10 Dirt
 #   speed 256.3 km/h after 10 blocks, 7.61 s
+
+# Will the car clear the gaps in this track? (ground model → take-off speed → air model)
+python tools/physics/plan_jumps.py tracks/stunts/droptest/droptest.json
+#   jump 11: 277 km/h, flies 1.90 blocks over a 1-block gap, lands +28.6 m  ok
+#   jump 20: 345 km/h, flies 3.33 blocks over a 3-block gap, lands +10.5 m  ok
 
 # Does this map connect start → finish?
 python tools/verify_track.py tracks/beginner/compass/Compass.Map.Gbx

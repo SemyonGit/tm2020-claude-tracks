@@ -22,11 +22,13 @@ predicted before it is built (issue #20).
 | Air physics (gravity + drag) | ✅ hold-out validated | `tools/physics/jump.py` |
 | Ground acceleration per surface | ✅ Asphalt/Dirt/Ice/Grass; ❌ Plastic | `tools/physics/ground.py` |
 | Kacky jump table | ✅ 17,407 jumps | `docs/jump_table.md` |
+| Declared jumps (`gap` segment) + predictions | ✅ composer/validator/verify; ⏳ drive Drop Test (#19) | `tools/physics/plan_jumps.py`, `check_drive.py` |
 | Learned block shapes (footprint + exits) | 🔧 1-cell good, multi-cell partly | `track_lib/data/learned_blocks.json` |
 | Live editor bridges (tm2020-mcp, tm-control-mcp) | ⬜ not installed yet (#2) | home PC |
 
 ## Verified blocks (composer segments)
 start, straight, checkpoint, finish, curve_right, curve_left (driven in-game).
+`gap` (cells, drop): deliberate jump, recorded in `track["jumps"]`, physics-predicted only.
 slope_up / slope_down: unverified (#5).
 
 ## Key facts (measured, not assumed)
@@ -79,6 +81,9 @@ slope_up / slope_down: unverified (#5).
 
 ## Known issues
 - #4, #21: need one drive of `tracks/beginner/compass/Compass.Map.Gbx`.
+- #19: drive `tracks/stunts/droptest/Drop Test.Map.Gbx` full gas, no steering, save the replay, then
+  `python tools/physics/check_drive.py <replay> tracks/stunts/droptest/droptest.json`.
+  Predicted: jump 1 277 km/h, lands +28.6 m past the strip edge; jump 2 345 km/h, +10.5 m.
 - #5: slopes unverified.
 - Map header author = template creator's account (zone "World|Asia|Bhutan").
 - `tracks/speedtech/silvercut/Silvercut.Map.Gbx` is a stale build with no start block;
