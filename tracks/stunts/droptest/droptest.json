@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "name": "Drop Test",
+    "author": "SemyonGit",
+    "category": "stunts",
+    "difficulty": 2,
+    "creativity": 2,
+    "generated_by": "Claude (Anthropic)",
+    "generated_at": "2026-10-28T10:40:51Z",
+    "target_at": "00:20.000",
+    "description": "Physics calibration (#19): two gaps sized by tools/physics/plan_jumps.py. Full gas, no steering. Jump 1 should clear the gap with ~29 m to spare, jump 2 with only ~10 m. Save the replay; tools/ghost_probe measures the real landing points."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day"
+  },
+  "blocks": [
+    {
+      "id": "StadiumRoadMainStart",
+      "x": 4,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 5,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 6,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 7,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 8,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 9,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 10,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 11,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 12,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 13,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 14,
+      "y": 4,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 16,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 17,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 18,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 19,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 21,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCheckpointIn",
+      "x": 22,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 23,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 24,
+      "y": 3,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 28,
+      "y": 1,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 29,
+      "y": 1,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 30,
+      "y": 1,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 31,
+      "y": 1,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 32,
+      "y": 1,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainFinish",
+      "x": 33,
+      "y": 1,
+      "z": 24,
+      "rotation": 1,
+      "flags": 0
+    }
+  ],
+  "checkpoints": [
+    17
+  ],
+  "jumps": [
+    {
+      "before_block": 11,
+      "cells": 1,
+      "drop": 1,
+      "predicted": {
+        "takeoff_block": 10,
+        "runup_m": 336.0,
+        "takeoff_kmh": 276.6,
+        "air_s": 0.8,
+        "distance_m": 60.6,
+        "distance_blocks": 1.9,
+        "landing_margin_m": 28.6,
+        "landing_kmh": 279.3,
+        "verdict": "ok",
+        "warnings": []
+      }
+    },
+    {
+      "before_block": 20,
+      "cells": 3,
+      "drop": 2,
+      "predicted": {
+        "takeoff_block": 19,
+        "runup_m": 259.4,
+        "takeoff_kmh": 345.1,
+        "air_s": 1.13,
+        "distance_m": 106.5,
+        "distance_blocks": 3.33,
+        "landing_margin_m": 10.5,
+        "landing_kmh": 348.6,
+        "verdict": "ok",
+        "warnings": []
+      }
+    }
+  ],
+  "sections": [
+    {
+      "name": "Jump 1",
+      "description": "1-cell gap, 8 m drop. Predicted: 277 km/h, 1.90 blocks, lands 28.6 m past the strip edge.",
+      "block_range": [
+        10,
+        11
+      ]
+    },
+    {
+      "name": "Jump 2",
+      "description": "3-cell gap, 16 m drop onto ground level. Predicted: 345 km/h, 3.33 blocks, lands 10.5 m past the strip edge. A miss lands on grass in the gap.",
+      "block_range": [
+        19,
+        20
+      ]
+    }
+  ]
+}
