@@ -1,0 +1,167 @@
+{
+  "meta": {
+    "name": "Compass",
+    "author": "SemyonGit",
+    "category": "beginner",
+    "difficulty": 1,
+    "creativity": 1,
+    "generated_by": "Claude (Anthropic)",
+    "generated_at": "2026-10-28T10:19:40Z",
+    "target_at": "00:15.000",
+    "description": "Test track for issue #4: start heading North, finish heading South. Spawn must face down the road, finish gate must trigger when driven through."
+  },
+  "settings": {
+    "environment": "Stadium",
+    "mood": "Day"
+  },
+  "blocks": [
+    {
+      "id": "StadiumRoadMainStart",
+      "x": 20,
+      "y": 1,
+      "z": 30,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 1,
+      "z": 29,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 1,
+      "z": 28,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 1,
+      "z": 27,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 20,
+      "y": 1,
+      "z": 26,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCurve1Right",
+      "x": 20,
+      "y": 1,
+      "z": 25,
+      "rotation": 0,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 21,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 22,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 23,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCheckpointIn",
+      "x": 24,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 25,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 26,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainCurve1Right",
+      "x": 27,
+      "y": 1,
+      "z": 25,
+      "rotation": 1,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 27,
+      "y": 1,
+      "z": 26,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 27,
+      "y": 1,
+      "z": 27,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 27,
+      "y": 1,
+      "z": 28,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainStraight",
+      "x": 27,
+      "y": 1,
+      "z": 29,
+      "rotation": 2,
+      "flags": 0
+    },
+    {
+      "id": "StadiumRoadMainFinish",
+      "x": 27,
+      "y": 1,
+      "z": 30,
+      "rotation": 2,
+      "flags": 0
+    }
+  ],
+  "checkpoints": [
+    9
+  ],
+  "sections": []
+}

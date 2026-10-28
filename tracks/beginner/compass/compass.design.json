@@ -1,0 +1,12 @@
+{
+  "meta": {"name": "Compass", "author": "SemyonGit", "category": "beginner",
+           "difficulty": 1, "creativity": 1, "target_at": "00:15.000",
+           "description": "Test track for issue #4: start heading North, finish heading South. Spawn must face down the road, finish gate must trigger when driven through."},
+  "settings": {"environment": "Stadium", "mood": "Day"},
+  "origin": {"x": 20, "y": 1, "z": 30, "heading": 0},
+  "path": [
+    {"seg": "start"}, {"seg": "straight", "count": 4}, {"seg": "curve_right"},
+    {"seg": "straight", "count": 3}, {"seg": "checkpoint"}, {"seg": "straight", "count": 2},
+    {"seg": "curve_right"}, {"seg": "straight", "count": 4}, {"seg": "finish"}
+  ]
+}
