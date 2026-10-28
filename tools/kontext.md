@@ -1,3 +1,22 @@
+## 2026-10-28 — #9 physics re-fit (hold-out) + #10 Kacky jump table ✅
+
+### Corpus
+3690 top-5 ghosts, 740 maps (KR1–6, KX1–4); 737 maps parse (3 EndOfStream in GBX.NET).
+96% CarSport; 134 ghosts without model id (2020–22) → treated as CarSport.
+
+### Air model (`tools/physics/holdout.py`, split by map 80/20)
+- CarSport g = **25.07 m/s²** (n=5484) — matches TMX v1 (24.9). Snow/Rally/Desert ≈ 40.8.
+- CarSport drag (km/h→m/s²): 50→0.62, 150→1.44, 250→2.19, 350→3.05, 475→3.82, 675→5.65.
+- Hold-out error: flights ≤1.5 s median **0.71 m** (p90 2.4); >1.5 s median **3.4 m, p90 31 m**
+  → long flights have an unmodelled effect (air control? #12). Constants live in `jump.py`.
+
+### Jump table (`tools/physics/jump_table.py` → `docs/jump_table.md` + `.csv`)
+- 17,407 jumps; unknown takeoff 2.6%, OutsideMap 1.7%; 939 distinct takeoff blocks.
+- Top Kacky takeoffs are NOT road: DecoWallBasePillar, DecoWallBase, StructureBase,
+  PlatformTechBase, StructureSupportDeadend. RoadTechRampLow: median 435 km/h, 12°, 5.7 blocks.
+- Map export fix: names/items with commas are CSV-quoted now.
+
+---
 ## 2026-10-27 — Planning moved to GitHub
 
 - `docs/ROADMAP.md`: goal, architecture, phases 0–5, decisions, risks.
