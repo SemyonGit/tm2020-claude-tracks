@@ -12,12 +12,13 @@ import sys
 BLOCK_XZ = 32.0  # m per grid cell horizontally
 BLOCK_Y = 8.0    # m per grid cell vertically
 
-# Fitted 2026-10-27 from 253 TMX replays (466 clean airborne segments).
-GRAVITY = {"CarSport": 24.9, "CarSnow": 40.8, "CarRally": 40.8, "CarDesert": 40.8}
+# Fitted 2026-10-28 (issue #9): 3690 Kacky ghosts + 253 TMX replays, 6828 clean flights,
+# hold-out by map. CarSport hold-out error: median 0.71 m (≤1.5 s flights), 3.4 m (>1.5 s).
+GRAVITY = {"CarSport": 25.07, "CarSnow": 40.78, "CarRally": 40.83, "CarDesert": 40.90}
 # Horizontal deceleration in air (m/s^2) at speed (km/h); linear interpolation.
 DRAG = {
-    "CarSport": [(0, 0.5), (100, 1.2), (200, 1.8), (300, 2.6), (450, 3.3)],
-    "CarSnow": [(0, 0.2)], "CarRally": [(0, 0.1), (300, 0.7)], "CarDesert": [(0, 0.1)],
+    "CarSport": [(50, 0.62), (150, 1.44), (250, 2.19), (350, 3.05), (475, 3.82), (675, 5.65)],
+    "CarSnow": [(150, 0.28)], "CarRally": [(150, 0.14), (250, 0.18)], "CarDesert": [(150, 0.2)],
 }
 
 

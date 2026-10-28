@@ -110,18 +110,18 @@ static int ExportMaps(string dir, string outDir)
                 if (b.IsFree && b.AbsolutePositionInMap is { } p)
                 {
                     var r = b.YawPitchRoll ?? default;
-                    rows.Add($"free,{b.Name},{p.X},{p.Y},{p.Z},,,,,{r.X},{r.Y},{r.Z},{b.Variant},0");
+                    rows.Add($"free,{Q(b.Name)},{p.X},{p.Y},{p.Z},,,,,{r.X},{r.Y},{r.Z},{b.Variant},0");
                 }
                 else
                 {
                     var c = b.Coord;
-                    rows.Add($"block,{b.Name},{c.X * 32},{(c.Y - 8) * 8},{c.Z * 32},{c.X},{c.Y},{c.Z},{b.Direction},,,,{b.Variant},{(b.IsGround ? 1 : 0)}");
+                    rows.Add($"block,{Q(b.Name)},{c.X * 32},{(c.Y - 8) * 8},{c.Z * 32},{c.X},{c.Y},{c.Z},{b.Direction},,,,{b.Variant},{(b.IsGround ? 1 : 0)}");
                 }
             }
             foreach (var it in map.GetAnchoredObjects())
             {
                 var p = it.AbsolutePositionInMap; var r = it.PitchYawRoll;
-                rows.Add($"item,{it.ItemModel.Id},{p.X},{p.Y},{p.Z},,,,,{r.Y},{r.X},{r.Z},,");
+                rows.Add($"item,{Q(it.ItemModel.Id)},{p.X},{p.Y},{p.Z},,,,,{r.Y},{r.X},{r.Z},,");
             }
             var uid = map.MapUid ?? Path.GetFileName(path).Split('.')[0];
             File.WriteAllLines(Path.Combine(outDir, $"{uid}.blocks.csv"), rows);
@@ -132,3 +132,5 @@ static int ExportMaps(string dir, string outDir)
     Console.WriteLine($"maps parsed {ok}, failed {fail}");
     return 0;
 }
+
+static string Q(string? s) => s is null ? "" : s.Contains(',') || s.Contains('"') ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
