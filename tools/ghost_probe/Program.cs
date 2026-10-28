@@ -18,7 +18,7 @@ CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
 const string Header =
     "t_ms,x,y,z,qx,qy,qz,qw,vx,vy,vz,speed_kmh,steer,gas,brake,gear,rpm," +
-    "ground,fl_mat,fr_mat,rl_mat,rr_mat,fl_damp,fr_damp,rl_damp,rr_damp,turbo,sim_coef,wetness";
+    "ground,fl_mat,fr_mat,rl_mat,rr_mat,fl_damp,fr_damp,rl_damp,rr_damp,turbo,sim_coef,wetness,gmode";
 
 if (args.Length == 0) { Console.Error.WriteLine("usage: <file-or-dir> [out-dir] | map <map-dir> <out-dir>"); return 1; }
 
@@ -89,7 +89,7 @@ static string Row(CSceneVehicleVis.EntRecordDelta s)
         (int)s.FLGroundContactMaterial, (int)s.FRGroundContactMaterial,
         (int)s.RLGroundContactMaterial, (int)s.RRGroundContactMaterial,
         s.FLDampenLen, s.FRDampenLen, s.RLDampenLen, s.RRDampenLen,
-        raw.IsTurbo, raw.SimulationTimeCoef, s.WetnessValue);
+        raw.IsTurbo, raw.SimulationTimeCoef, s.WetnessValue, raw.GroundMode);
 }
 
 // Grid cell → world metres: 32 m horizontally, 8 m vertically, y shifted by 8 cells

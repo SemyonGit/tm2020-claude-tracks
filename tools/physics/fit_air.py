@@ -21,7 +21,9 @@ def segments(d):
     # turbo byte: GBX.NET masks 0x82, but 0x02 is set on ~80% of airborne samples, so only
     # 0x80 is treated as turbo (assumption, not verified).
     turbo = (d["turbo"].astype(int) & 0x80) != 0
-    air = (d["ground"] == 0) & (d["sim_coef"] == 255) & ~turbo
+    # reactor (boost lvl / up / down / reactor ground mode) adds thrust: not free flight
+    reactor = (d["gmode"].astype(int) & 0x7C) != 0 if "gmode" in d else np.zeros(len(d["t_ms"]), bool)
+    air = (d["ground"] == 0) & (d["sim_coef"] == 255) & ~turbo & ~reactor
     i, n = 0, len(air)
     while i < n:
         if air[i]:

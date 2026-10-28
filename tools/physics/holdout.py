@@ -11,6 +11,7 @@ import numpy as np
 from fit_air import load, segments
 
 R2_MIN = 0.995
+SPIKE = 60.0  # m/s^2 deviation from the flight's median accel = body collision (wheels in air)
 SPEED_BINS = [0, 100, 200, 300, 400, 550, 800]
 
 
@@ -35,6 +36,9 @@ def clean_segments(tdirs):
                     continue
                 pos = np.stack([d["x"][s], d["y"][s], d["z"][s]], 1)
                 vel = np.stack([d["vx"][s], d["vy"][s], d["vz"][s]], 1)
+                a = np.diff(vel, axis=0) / np.diff(t)[:, None]
+                if np.linalg.norm(a - np.median(a, axis=0), axis=1).max() > SPIKE:
+                    continue  # hit something mid-air: not a free flight
                 yield g["map_uid"], car_of(g.get("vehicle", "")), t, pos, vel, p[0]
 
 
