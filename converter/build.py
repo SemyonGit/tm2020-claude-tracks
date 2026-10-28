@@ -16,7 +16,10 @@ Beispiele
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -422,10 +425,13 @@ def tm2020_dir(json_id: str, json_rot: int) -> str:
     rot = json_rot & 3
     # 1. Waypoints face the driving direction (same as a straight at this rot).
     if is_waypoint_block(json_id):
-        base = STRAIGHT_DIR_MAP[rot]
         if "Start" in json_id or "Finish" in json_id:
-            return DIR_NAMES[(base + 2) % 4]
-        return DIR_NAMES[base]
+            # Start/Finish are directional: dir's forward vector must equal the travel
+            # vector. Measured on 231 RoadTechStart blocks in 737 Kacky maps (0 exceptions):
+            # forward North=+z, East=-x, South=-z, West=+x. JSON travel N=-z,E=+x,S=+z,W=-x
+            # → dir = (rot + 2) % 4. (The old STRAIGHT_DIR_MAP+2 was only right for E/W.)
+            return DIR_NAMES[(rot + 2) % 4]
+        return DIR_NAMES[STRAIGHT_DIR_MAP[rot]]
     # 2. True corner curves: pick the curve map by Right/Left/In/Out suffix.
     if "Curve" in json_id:
         if json_id.endswith("Right") or json_id.endswith("In"):
@@ -509,6 +515,31 @@ def find_tm2020_maps_dir() -> Path | None:
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
 
+def map_uid(meta: dict, name: str) -> str:
+    """Stable 27-char map UID per track (same name+category → same UID across rebuilds).
+
+    Every map used to keep the template's UID, so TM2020 saw all our tracks as one map
+    (shared records/ghosts). base64url alphabet, like Nadeo's UIDs."""
+    seed = f"tm2020-claude-tracks/{meta.get('category', '')}/{name}".encode("utf-8")
+    return base64.urlsafe_b64encode(hashlib.sha256(seed).digest()).decode("ascii")[:27]
+
+
+def set_map_identity(data, blocks_chunk, name: str, uid: str) -> None:
+    """Write map name + UID into header chunk, header XML and body blocks chunk."""
+    targets = [blocks_chunk] + [h for h in data.header.data
+                                if hasattr(h, "get") and "mapInfo" in h]
+    for c in targets:
+        if "mapName" in c:
+            c.mapName = name
+        if "mapInfo" in c and "id" in c.mapInfo:
+            c.mapInfo.id = uid
+    for h in data.header.data:
+        if hasattr(h, "get") and "xml" in h:
+            xml_name = name.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
+            h.xml = re.sub(r'(<ident uid=")[^"]*(" name=")[^"]*(")',
+                           lambda m: f"{m.group(1)}{uid}{m.group(2)}{xml_name}{m.group(3)}", h.xml, count=1)
+
+
 def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
           force: bool = False) -> Path | None:
     track = json.loads(json_path.read_text(encoding="utf-8"))
@@ -591,8 +622,7 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
         sys.exit(1)
 
     chunk.Blocks = block_instances
-    if "mapName" in chunk:
-        chunk.mapName = name
+    set_map_identity(data, chunk, name, map_uid(meta, name))
 
     dropped = strip_block_dependent_chunks(data)
     if dropped:
