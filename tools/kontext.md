@@ -66,7 +66,7 @@ slope_up / slope_down: unverified (#5).
 **File format**
 - Ghost samples every 50 ms: position, rotation, velocity, inputs, gear, rpm, ground contact,
   per-wheel material (keeps its last value in the air), suspension, ground-mode byte.
-- Turbo byte meaning unclear (#13); `0x80` treated as turbo, `0x02` is not.
+- Turbo byte: `0x80` = turbo active (confirmed on turbo pads); 0x02/0x04 probably grip/slide; see `docs/ghost_format.md` (#13).
 - GBX.NET 2.4.5 throws in chunk 0x0304303D (lightmap cache) on our maps + some Kacky maps
   → read with `SafeSkippableChunks + IgnoreExceptionsInBody`.
 - Vendored gbxpy must not parse the same map twice in one process (ZipFile GC warning).
