@@ -103,7 +103,10 @@ static int ExportMaps(string dir, string outDir)
     {
         try
         {
-            var map = Gbx.ParseNode<CGameCtnChallenge>(path);
+            // Tolerant read: GBX.NET 2.4.5 throws in the lightmap-cache chunk (0x0304303D) on some
+            // maps, including every map our converter writes. Blocks are read before that chunk.
+            var map = Gbx.ParseNode<CGameCtnChallenge>(path,
+                new GbxReadSettings { SafeSkippableChunks = true, IgnoreExceptionsInBody = true });
             var rows = new List<string> { "kind,name,x,y,z,gx,gy,gz,dir,yaw,pitch,roll,variant,ground" };
             foreach (var b in map.GetBlocks())
             {
