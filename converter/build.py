@@ -541,7 +541,7 @@ def set_map_identity(data, blocks_chunk, name: str, uid: str) -> None:
 
 
 def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
-          force: bool = False) -> Path | None:
+          force: bool = False, verify: bool = True) -> Path | None:
     track = json.loads(json_path.read_text(encoding="utf-8"))
     meta = track.get("meta", {})
     name = meta.get("name", json_path.stem)
@@ -633,6 +633,16 @@ def build(json_path: Path, deploy: bool = True, dry_run: bool = False,
     out_path.write_bytes(generate_file(data))
     print(f"✅ {out_path}")
 
+    if verify:
+        # Independent check: walk start→finish with block shapes learned from real maps.
+        sys.path.insert(0, str(ROOT.parent / "tools"))
+        from verify_track import load_shapes, verify_blocks  # noqa: E402
+        ok, notes = verify_blocks(block_instances, load_shapes())
+        print(f"{'🔗' if ok else '❌'} verify_track: {notes[-1]}")
+        if not ok and not force:
+            print("   Not deploying a disconnected track (use --force to override).")
+            return out_path
+
     if deploy:
         target = find_tm2020_maps_dir()
         if target:
@@ -658,6 +668,8 @@ def main() -> None:
                     help="Eingabe ist ein Ordner — alle *.json rekursiv bauen")
     ap.add_argument("--force", action="store_true",
                     help="Trotz Validator-Problemen bauen")
+    ap.add_argument("--no-verify", action="store_true",
+                    help="Kein Start→Finish-Check (tools/verify_track.py) nach dem Bauen")
     args = ap.parse_args()
 
     target = Path(args.input)
@@ -673,7 +685,7 @@ def main() -> None:
             print(f"— {f.relative_to(target)}")
             try:
                 build(f, deploy=not args.no_deploy, dry_run=args.dry_run,
-                      force=args.force)
+                      force=args.force, verify=not args.no_verify)
                 ok += 1
             except SystemExit:
                 fail += 1
@@ -684,7 +696,7 @@ def main() -> None:
         print(f"━━━ Fertig: {ok} ok, {fail} fehlgeschlagen ━━━")
     else:
         build(target, deploy=not args.no_deploy, dry_run=args.dry_run,
-              force=args.force)
+              force=args.force, verify=not args.no_verify)
 
 
 if __name__ == "__main__":
